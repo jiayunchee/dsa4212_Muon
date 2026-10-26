@@ -1,13 +1,29 @@
 # Muon optimiser project (DSA4212)
 
-**Status, 15 Oct 2026:** the environment is set up and smoke-tested. The research question, experiment protocol, group members and repository URL are not final yet.
+**Repository:** https://github.com/jiayunchee/dsa4212_Muon
 
-- GitHub URL: *to be added*
-- Authors: *to be added in `authors.md`*
+**Status, 20 Oct 2026:**
+
+- The experiment protocol is fixed in `notes/protocol.md`.
+- The baselines (E1) are run; the main experiments (E2–E4) are in progress.
+- The report has not been started.
+
+Authors are listed in `authors.md`.
+
+## Question
+
+Late in training, should Muon flatten its update more or less, and does the answer depend on gradient noise?
+
+- **The family.** Muon replaces each hidden-layer update matrix N = U S Vᵀ by U Vᵀ. We study U S^p Vᵀ:
+  - p = 0 is Muon;
+  - p = 1 is (normalised) momentum SGD;
+  - p < 0 boosts weak directions even more than Muon does.
+- **Why it's open.** Two 2026 papers make opposite predictions for late training (Xie, arXiv:2609.32861; Wu et al., arXiv:2605.17109). We test whether the best p depends on the noise level. The noise is controlled through the batch size on a synthetic teacher–student task with a known optimum.
+- **More detail.** Background is in `notes/novelty_check_2026-10-19.md`; the full design is in `notes/protocol.md`.
 
 ## Environment
 
-Tested on a MacBook Air (Apple M3, 16 GB, macOS 26.6) with Python 3.12.15 and PyTorch 2.14.1.
+Tested on a MacBook Air (Apple M3, 16 GB, macOS 26.6) with Python 3.12.15, PyTorch 2.14.1 and SciPy 1.18.1. Everything runs on the CPU in float32.
 
 ```bash
 conda create -n muon --override-channels -c conda-forge python=3.12 pip -y
@@ -17,34 +33,44 @@ pip install -r requirements.txt
 
 `requirements.txt` pins the packages used directly. `requirements-lock.txt` is the full `pip freeze` of the tested environment.
 
-## Smoke test
+## How to reproduce
 
-```bash
-python code/smoke_test.py          # about 5 minutes on an M3 MacBook Air
-python code/smoke_test.py --quick  # about 2 minutes
-```
+Run every command from the repository root.
 
-This checks the toolchain. It does not produce research results: the optimisers are untuned and the task is too easy to separate them. The script:
+| Step | Command | Time on the M3 (4 workers) |
+|---|---|---|
+| Unit tests (must pass first) | `python -m pytest -q` | ~3 s |
+| Toolchain smoke test | `python code/smoke_test.py --quick` | ~2 min |
+| E0 pilot | `python code/run.py configs/e0_pilot.yaml --workers 4` | ~4 min |
+| E1 baselines | `python code/run.py configs/e1a_baselines_adamw_sgd.yaml --workers 4`, then `configs/e1a_ext_sgd_b1024.yaml`, then `configs/e1b_baselines_muon.yaml` | ~15 + 1 + 35 min |
+| E1 analysis and figures | `python code/analyze_tuning.py results/e1_baselines` and `python code/plot_e1.py` | seconds |
+| E2 shared phase | `python code/run.py configs/e2_shared.yaml --workers 4` | ~10 min |
+| E3 tuning branches | `python code/run.py configs/e3a_branches_tune.yaml --workers 4`, then `python code/analyze_branches.py select` | ~50 min |
+| E3 evaluation branches | `python code/run.py configs/e3b_branches_eval.yaml --workers 4`, then `python code/analyze_branches.py evaluate` and `python code/plot_e3.py` | ~25 min |
+| Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` | ~5 min |
 
-1. records software versions and devices;
-2. compares float32 and bfloat16 matrix multiplication on the CPU and the Apple GPU (MPS);
-3. checks our Newton–Schulz implementation against PyTorch's, and a minimal Muon against `torch.optim.Muon`;
-4. times one training step for AdamW and Muon+AdamW at batch sizes 32 to 2048;
-5. trains a small MLP for a few epochs with AdamW, SGD+Nesterov and two Muon variants.
+**Notes on running.**
 
-Results go to `results/smoke/`. By default the script uses the binary Fashion-MNIST subset from the DSA4212 exercises (set the folder with `--data-dir`). If that folder is missing, it falls back to synthetic data.
+- Sweeps can be resumed: a run whose result file exists is skipped.
+- Each run writes a JSON record to `results/<experiment>/`. It holds the config, seed, git commit, package versions, the full evaluation history and a summary.
+- Checkpoints go to `checkpoints/`. They are not committed; rerun E2 to regenerate them.
 
-`code/checks/ns_bf16_rounding.py` reproduces the investigation of a bf16 discrepancy found during the smoke test (see `notes/lab_notebook.md`).
-
-## Known limitation on Apple-silicon Macs
-
-bfloat16 matrix multiplication on the CPU is roughly 200–400× slower than float32 with this PyTorch build. `torch.optim.Muon` always runs Newton–Schulz in bfloat16, so on the CPU use an fp32 Newton–Schulz, or run on the Apple GPU (MPS), where bfloat16 is fast.
-
-## Layout (provisional; will follow the official brief)
+## Layout
 
 | Path | Contents |
 |---|---|
-| `code/` | training, optimiser and analysis code |
-| `code/checks/` | one-off investigations, kept so they can be re-run |
-| `results/` | saved numerical results (committed) |
-| `notes/` | lab notebook and reading list |
+| `code/muonlab/` | Update rules (`optim.py`), MLP, teacher–student data, noise diagnostics, training loop with branching, sweep runner |
+| `code/*.py` | Command-line entry points: run, analyse, plot, benchmark, smoke test |
+| `code/checks/` | One-off investigations, kept so they can be re-run |
+| `configs/` | One YAML file per experiment |
+| `tests/` | Unit tests (pytest) |
+| `results/` | Saved numerical results (committed) |
+| `report/figures/` | Figures generated from `results/` |
+| `notes/` | Protocol, lab notebook, reading list, novelty check |
+
+## Known limitations
+
+- **Small networks on a synthetic task:** results speak to mechanisms, not to large-model training.
+- **float32 throughout,** whereas the reference implementations use bfloat16. bfloat16 is 200–400× slower on this CPU; see the lab notebook (15 Oct).
+- **Exact-SVD Muon is not Newton–Schulz Muon;** both are reported.
+- **Few seeds:** 2 seeds for tuning, 3 for evaluation.

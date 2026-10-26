@@ -1,0 +1,32 @@
+# E1b (notes/protocol.md, Section 4): Muon baselines with learning-rate tuning.
+# The non-hidden parameters use AdamW at the best AdamW learning rate for each batch size,
+# taken from E1a (results/e1_baselines/tuning_summary.csv). Filled in on 20 Oct 2026.
+experiment: e1_baselines
+
+base:
+  seed: 0
+  threads: 1
+  task: {d_in: 128, teacher_hidden: [64, 64], d_out: 16, power: 1.0, label_noise: 0.5, teacher_seed: 0}
+  eval_size: 16384
+  eval_seed: 12345
+  model: {widths: [128, 256, 256, 256, 16], activation: tanh}
+  batch_size: 16
+  steps: 6000
+  eval_every: 100
+  schedule: constant
+  optimizer:
+    name: muon
+    momentum: 0.95
+    adam_lr: {by: batch_size, map: {16: 3.0e-4, 64: 1.0e-3, 256: 1.0e-3, 1024: 1.0e-3}}  # best AdamW lr per B (E1a)
+
+grid:
+  batch_size: [16, 64, 256, 1024]
+  seed: [0, 1]
+
+arms:
+  - label: muon-ns5
+    set: {optimizer: {update: ns5}}
+    sweep: {optimizer.lr: [0.0005, 0.001, 0.003, 0.01, 0.03]}
+  - label: muon-exact
+    set: {optimizer: {update: spectral, p: 0.0}}
+    sweep: {optimizer.lr: [0.0005, 0.001, 0.003, 0.01, 0.03]}

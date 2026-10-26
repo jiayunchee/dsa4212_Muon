@@ -1,0 +1,28 @@
+# E1a (notes/protocol.md, Section 4): AdamW and SGD baselines with learning-rate tuning.
+# Run before E1b, which reuses the best AdamW learning rate for each batch size for the
+# non-hidden parameters of the Muon runs. Grids widened after the E0 pilot (20 Oct 2026).
+experiment: e1_baselines
+
+base:
+  seed: 0
+  threads: 1
+  task: {d_in: 128, teacher_hidden: [64, 64], d_out: 16, power: 1.0, label_noise: 0.5, teacher_seed: 0}
+  eval_size: 16384
+  eval_seed: 12345
+  model: {widths: [128, 256, 256, 256, 16], activation: tanh}
+  batch_size: 16
+  steps: 6000
+  eval_every: 100
+  schedule: constant
+
+grid:
+  batch_size: [16, 64, 256, 1024]
+  seed: [0, 1]
+
+arms:
+  - label: adamw
+    set: {optimizer: {name: adamw}}
+    sweep: {optimizer.lr: [3.0e-5, 1.0e-4, 3.0e-4, 1.0e-3, 3.0e-3]}
+  - label: sgd
+    set: {optimizer: {name: sgd, momentum: 0.9}}
+    sweep: {optimizer.lr: [0.003, 0.01, 0.03, 0.1, 0.3]}

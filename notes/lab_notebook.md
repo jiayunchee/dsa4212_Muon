@@ -2,6 +2,34 @@
 
 A dated record of what was done, what was observed and what was decided. Newest entries go at the top. Measured facts and interpretations are kept apart.
 
+## 2026-10-20: protocol, code, tests, pilot (E0), baselines started (E1a)
+
+### Done
+
+- Wrote `notes/protocol.md` (v1): hypotheses H1–H3, update rules, Task A design, experiment matrix, analysis plan.
+- Implemented `code/muonlab/`: update rules, MLP, teacher–student stream, noise diagnostics, training loop with checkpoints and branching, and a sweep runner (`code/run.py`).
+- Added a 22-test suite: `pytest`, all passing.
+- Ran the E0 pilot (`configs/e0_pilot.yaml`, 16 runs, results in `results/e0_pilot/`).
+- Started E1a (`configs/e1a_baselines_adamw_sgd.yaml`, 80 runs).
+
+### Problems found and fixed (kept on record)
+
+1. **A unit test caught the shape factor √max(1, m/n) being applied twice** to Xie's matched momentum-SGD learning rate: once in the formula, once by the optimizer. The formula now leaves it out. It made no difference for our 256×256 matrices, where the factor is 1, but it would elsewhere.
+2. **Pilot run `muon-exact_lr0.03_B1024` crashed at step ≈ 5895.** `torch.linalg.svd` in float32 failed to converge. The input was finite, with Frobenius norm 3.6e-3 and condition number 4.2e4; float64 SVD of the same matrix works. Fix: retry in float64. Every fallback is counted in the run summary (`svd_float64_fallbacks`). The rerun had 1 fallback.
+
+### Pilot observations (one seed, untuned; not results)
+
+- **Time per step**, one thread, four parallel workers:
+  - AdamW and SGD: 0.3–0.6 ms at B = 16, about 5 ms at B = 1024.
+  - NS5 Muon: about 3 ms at B = 16, about 8 ms at B = 1024.
+  - Exact-SVD Muon: 11–15 ms.
+  - During E1a, B = 1024 steps took about 11 ms, because four workers share the CPU.
+- **Xie's indicator δ at step 6000** (Muon runs): 3.4–5.6 at B = 1024 and 0.3–0.8 at B = 16. Batch size moves the hidden layers across δ ≈ 1, the boundary between signal-dominated and noise-dominated, as the design needs.
+- **Muon converges fastest early but plateaus.** At step 1000 and B = 1024, its excess risk was 0.015 against AdamW's 0.040 and SGD's 0.057. Muon then flattens at about 0.010, while SGD keeps falling (0.0077 at step 6000 and still decreasing).
+- **At B = 16, at the learning rates tried, Muon's plateau (0.11–0.12) sat above AdamW's (0.104) and SGD's (0.090).** This fits Xie's noise-floor prediction, but it is unconfirmed until every optimiser is tuned.
+  - **Overturned by E1 (same day).** With tuned learning rates, NS5 Muon has the *lowest* excess risk at every batch size. The pilot's Muon learning rates (0.01–0.03) were simply too high. This shows why the protocol requires equal tuning before any comparison. Details are in the E1 entry.
+- **Every optimiser preferred the lower learning rate at B = 16.** The E1 grids were therefore widened downwards to 5 values spanning two decades.
+
 ## 2026-10-19: novelty check of the provisional direction
 
 ### Done
