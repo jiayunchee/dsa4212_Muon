@@ -2,6 +2,113 @@
 
 A dated record of what was done, what was observed and what was decided. Newest entries go at the top. Measured facts and interpretations are kept apart.
 
+## 2026-10-27: follow-up F1 (p = −0.5, −0.75); selection made before tuning finished
+
+Entries for 21–26 Oct (E1, E2, E3, timing) have not been written yet. Until they are, those results are recorded in the `results/*/` summaries and the protocol change log.
+
+### Done
+
+- Started F1 (protocol change log, 27 Oct). E3 put p* = −0.25 in all 8 conditions, the most negative exponent tested. F1 adds p = −0.5 and p = −0.75 from the same E2 checkpoints.
+- Ran the F1 tuning: `configs/f1a_branches_tune.yaml`, 96 runs, multipliers {0.5, 1, 2}, seeds {0, 1}.
+- Ran the F1 evaluation (48 runs), `evaluate --followup` and `plot_e3.py`. The evaluation turned out to be premature; see below.
+
+### Problem found and fixed (kept on record)
+
+**The F1 multipliers were selected before the extension runs existed.**
+- 14:43:43: `extend --followup` found the best multiplier on the high edge (×2) in all 16 cells (2 arms × 8 conditions). It wrote `configs/f1a_ext1_branches_tune.yaml`: ×4 and ×8, 64 runs.
+- 14:43:46: `select --followup` ran before any of those runs. It chose ×2 everywhere.
+- The 48 evaluation runs and the follow-up summary all used ×2.
+- The ×4/×8 runs had not been run as of 15:55.
+
+**Why it matters.**
+- At ×2 the tuning curves were still falling: −2% to −13% in tail excess risk from ×1 to ×2. The drop was steeper for p = −0.5 and at larger B.
+- In E3, p = −0.25's best multiplier was above ×2 in 5 of 8 cells (×4 or ×8). There it beat ×2 by 4.5–16%.
+- So the new arms were compared before their step size was found. This is the step-size/shape confound that the per-p tuning exists to remove (Shumaylov et al.; protocol Sections 2 and 6).
+
+**Fixes in `code/analyze_branches.py`.**
+- `select` now refuses while any tuning run is unfinished or any best multiplier sits on an edge that can still be extended. The check is `pending()`, shared with `extend`.
+- `extend` no longer writes a duplicate config when the newest one has been written but not run. It names that config instead.
+- `evaluate` used every evaluation-seed run of an arm. After a re-selection, the old ×2 runs and the new runs would have been mixed in filename order. It now uses only runs at the multipliers in the evaluation configs (`selected_multipliers()`).
+- `evaluate` also skips a condition whose evaluation runs are unfinished, instead of quietly using fewer seeds.
+
+**Checks.**
+- 3 new tests in `tests/test_analysis.py`; all 25 tests pass.
+- On the current data, `evaluate` and `evaluate --followup` reproduce the previous summaries byte for byte.
+- E3 has no unfinished runs and no open edges, so its selection is unaffected.
+- `select --followup` now exits with an error and writes nothing. `extend --followup` names `f1a_ext1`.
+
+### Provisional numbers (superseded; the new arms at ×2)
+
+Copied to `results/e3_branches/evaluation_summary_followup_provisional_x2.json`. The 48 evaluation runs at ×2 stay in `results/e3_branches/`.
+
+- p* = −0.25 in all 8 conditions, with a bootstrap share of 1.00.
+- p = −0.5 against continued Muon: −1.6% at B = 16, β = 0.95; +3% to +43% elsewhere.
+- p = −0.75: +7% to +69% everywhere.
+
+Interpretation: these figures likely overstate the new arms' excess risk. Whether the optimum is really bracketed at −0.25 is open until the extension runs are done. On evaluation means, p = −0.5 trails p = −0.25 by 1.4% at B = 16, β = 0.95, and by 6–50% elsewhere.
+
+### Figures
+
+- `e3_relative_change(_followup)`:
+  - the x tick labels for p = −0.75, −0.5 and −0.25 overlapped, so they are now smaller;
+  - the legend moved below the panels, clear of the data.
+- `e4_delta_vs_batch`:
+  - the y ticks are now plain numbers (they were in 2×10⁰ style);
+  - the legend is gone, since the lines are labelled directly;
+  - the δ = 1 note moved to the bottom right (it sat under the B = 16, β = 0.95 point).
+
+### Next (superseded by the list at the end of this entry)
+
+1. Run `configs/f1a_ext1_branches_tune.yaml` (64 runs). Repeat `extend --followup`, running each config it names, until it reports no further extension.
+2. Run `select --followup`, then `configs/f1b_branches_eval.yaml` (runs at an unchanged multiplier are skipped), `evaluate --followup` and `plot_e3.py`.
+
+### Later on 27 Oct: ×4/×8 runs done, 12 cells still on the edge, the old selection evaluated again
+
+**What happened.**
+- 17:22–17:38: `f1a_ext1` ran (64 runs).
+- 17:44:01: `extend --followup` wrote `configs/f1a_ext2_branches_tune.yaml`. It tries ×16 and ×32 for the 12 cells whose best is now ×8 (48 runs). The other 4 cells now have an interior best: p = −0.75 at B = 16 (×4 at both β), and p = −0.5 at B = 16 (×4 at β = 0.9, ×2 at β = 0.95).
+- 17:44:47: `evaluate --followup` ran without a new `select` (`f1b_branches_eval.yaml` unchanged since 14:43:46). It used the ×2 selection again, and its summary is byte-identical to the provisional copy (same md5).
+
+**Fix.** `evaluate` now refuses in two cases:
+- the tuning of any arm it compares is unfinished or still has an edge to extend (the same `pending()` check as `select`);
+- a multiplier in an evaluation config is no longer the best on the tuning seeds (`stale_selections()`).
+
+New: `code/run_branches.py [--followup]` runs a stage in protocol order: tuning, extensions until resolved, `select`, evaluation runs, `evaluate`, figures.
+
+**Checks.**
+- 1 new test; all 26 tests pass.
+- E3: 0 of 48 cells stale, so the pre-registered evaluation is unaffected.
+- F1: 15 of 16 cells stale. `evaluate --followup` and `select --followup` both refuse and write nothing.
+- `run_branches.py` on E3 (0 runs left): summary byte-identical. `e3b_branches_eval.yaml` was regenerated with the current header wording (2 comment lines); its multipliers are unchanged.
+
+**Preview on the tuning seeds only.** Each cell shows the best multiplier so far and the change in mean tail excess risk against p = 0's best. This is not the evaluation: taking the minimum over multipliers on the same seeds is optimistic, and 12 cells are still on the edge.
+
+| B | β | p = −0.75 | p = −0.5 | p = −0.25 (E3) |
+|---|---|---|---|---|
+| 16 | 0.9 | ×4, +6.6% | ×4, +0.7% | ×2, −2.7% |
+| 16 | 0.95 | ×4, +2.9% | ×2, −1.6% | ×1, −2.9% |
+| 64 | 0.9 | ×8\*, +16.8% | ×8\*, +0.2% | ×8, −2.8% |
+| 64 | 0.95 | ×8\*, +10.9% | ×8\*, −3.9% | ×4, −4.7% |
+| 256 | 0.9 | ×8\*, +33.8% | ×8\*, +0.6% | ×8, −5.2% |
+| 256 | 0.95 | ×8\*, +13.7% | ×8\*, −8.0% | ×4, −7.1% |
+| 1024 | 0.9 | ×8\*, +26.6% | ×8\*, −3.0% | ×4, −5.0% |
+| 1024 | 0.95 | ×8\*, +5.2% | ×8\*, −6.6% | ×2, −4.3% |
+
+\* still on the high edge.
+
+**Reading.**
+- On these seeds, p = −0.5 is already ahead of p = −0.25 in 2 cells: B = 256 and B = 1024, both at β = 0.95.
+- In all six B ≥ 64 cells it was still improving from ×4 to ×8, by 4.0–16.4%; p = −0.75 by 6.9–14.9%.
+- At B = 16 both new arms have an interior optimum and trail p = −0.25.
+- If this holds on the evaluation seeds, p* is no longer constant: it is more negative at large B and high δ. Then H3's correlation can be computed, but only as an exploratory result, since F1 was not pre-registered. The pre-registered E3 verdicts stand either way.
+- The first F1 reading ("p = −0.5 is 3–43% worse than Muon") was largely a step-size artefact.
+- A plausible reason, still to check: with ‖D‖_F fixed at √rank, a more negative p moves update size from the strong directions to the weak ones, so it needs a larger multiplier to make the same progress along the strong directions.
+
+### Next (supersedes the list above)
+
+1. `caffeinate -i python code/run_branches.py --followup`. This runs `f1a_ext2` (48 runs), any further extension (at most up to ×64), `select`, the changed `f1b` runs (45), `evaluate --followup` and the figures, in about 30–40 min.
+2. Backfill the 21–26 Oct entries (E1, E2, E3, timing) before the report.
+
 ## 2026-10-20: protocol, code, tests, pilot (E0), baselines started (E1a)
 
 ### Done

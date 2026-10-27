@@ -23,7 +23,7 @@ from scipy import stats  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 FIGURES = REPO / "report" / "figures"
-SPECTRAL = [("p-0.25", -0.25), ("p0", 0.0), ("p0.5", 0.5), ("p1", 1.0)]
+SPECTRAL = [("p-0.75", -0.75), ("p-0.5", -0.5), ("p-0.25", -0.25), ("p0", 0.0), ("p0.5", 0.5), ("p1", 1.0)]
 BATCH_COLOURS = {16: "#86b6ef", 64: "#3987e5", 256: "#1c5cab", 1024: "#0d366b"}  # ordinal, light -> dark
 MOMENTUM_COLOURS = {0.9: "#2a78d6", 0.95: "#eb6834"}  # categorical slots 1-2
 INK, INK_2, GRID = "#0b0b0b", "#52514e", "#e4e3df"
@@ -46,14 +46,15 @@ def relative_change(cond: dict, arm: str) -> tuple[float, float, float]:
     return float(rel.mean()), float(rel.mean() - half), float(rel.mean() + half)
 
 
-def figure_relative_change(summary: dict):
+def figure_relative_change(summary: dict, followup: bool = False):
     momenta = sorted({c["m"] for c in summary["conditions"]})
-    fig, axes = plt.subplots(1, len(momenta), figsize=(3.4 * len(momenta), 2.9), sharey=True, squeeze=False)
+    present = [(arm, p) for arm, p in SPECTRAL if any(arm in c["arms"] for c in summary["conditions"])]
+    fig, axes = plt.subplots(1, len(momenta), figsize=(3.5 * len(momenta), 2.9), sharey=True, squeeze=False)
     for ax, m in zip(axes[0], momenta):
         ax.axhline(0, color=INK_2, linewidth=0.8, zorder=1)
         for cond in sorted((c for c in summary["conditions"] if c["m"] == m), key=lambda c: c["B"]):
             xs, means, lows, highs = [], [], [], []
-            for arm, p in SPECTRAL:
+            for arm, p in present:
                 if arm in cond["arms"]:
                     mean, lo, hi = relative_change(cond, arm)
                     xs.append(p), means.append(mean), lows.append(lo), highs.append(hi)
@@ -61,12 +62,16 @@ def figure_relative_change(summary: dict):
             ax.errorbar(xs, means, yerr=[np.subtract(means, lows), np.subtract(highs, means)], color=colour,
                         linewidth=1.5, marker="o", markersize=4.5, capsize=2, elinewidth=0.8,
                         label=f"B = {cond['B']}", zorder=3)
-        ax.set_xticks([p for _, p in SPECTRAL], labels=["−0.25", "0\n(Muon)", "0.5", "1\n(SGD-like)"])
+        names = {0.0: "0\n(Muon)", 1.0: "1\n(SGD-like)"}
+        ax.set_xticks([p for _, p in present], labels=[names.get(p, f"{p:g}".replace("-", "−")) for _, p in present])
+        ax.tick_params(axis="x", labelsize=7.5 if len(present) > 4 else 9)  # p = -0.75, -0.5, -0.25 sit close
         ax.set_xlabel("Late-phase spectral exponent p")
         ax.set_title(f"momentum β = {m:g}", fontsize=9, color=INK, loc="left")
     axes[0][0].set_ylabel("Change in excess risk vs p = 0 (%)")
-    axes[0][-1].legend(fontsize=7.5, title="batch size", title_fontsize=7.5)
-    fig.suptitle("Continuing from the same Muon checkpoint with exponent p (step size tuned per p);\n"
+    handles, labels = axes[0][0].get_legend_handles_labels()  # below the panels, clear of the data
+    fig.legend(handles, labels, loc="upper center", ncol=len(labels), bbox_to_anchor=(0.5, -0.1), fontsize=7.5)
+    fig.suptitle(("FOLLOW-UP F1 (not pre-registered): " if followup else "")
+                 + "continuing from the same Muon checkpoint with exponent p (step size tuned per p);\n"
                  "below 0 = better than continuing Muon. Mean and 95% interval over 3 evaluation seeds.",
                  fontsize=8, color=INK, x=0.0, ha="left", y=1.08)
     return fig
@@ -84,29 +89,33 @@ def figure_delta_vs_batch():
             if values:
                 Bs.append(B), deltas.append(np.mean(values))
         if Bs:
-            ax.plot(Bs, deltas, color=colour, marker="o", markersize=5, linewidth=1.5, label=f"β = {m:g}",
+            ax.plot(Bs, deltas, color=colour, marker="o", markersize=5, linewidth=1.5,
                     markeredgecolor="white", markeredgewidth=0.8)
             ax.annotate(f"β = {m:g}", (Bs[-1], deltas[-1]), xytext=(6, 0), textcoords="offset points",
-                        va="center", fontsize=7.5, color=INK)
+                        va="center", fontsize=7.5, color=INK)  # direct labels, so no legend
     ax.axhline(1, color=INK_2, linewidth=0.8, linestyle="--")
-    ax.annotate("δ = 1: signal ≈ noise", (16, 1), xytext=(0, 4), textcoords="offset points", fontsize=7, color=INK_2)
+    ax.annotate("δ = 1: signal ≈ noise", (1024, 1), xytext=(0, -3), textcoords="offset points", ha="right",
+                va="top", fontsize=7, color=INK_2)  # bottom right, where no line passes
     ax.set_xscale("log", base=2)
     ax.set_yscale("log")
     ax.set_xticks([16, 64, 256, 1024], labels=["16", "64", "256", "1024"])
+    ax.set_yticks([0.75, 1, 1.5, 2, 3, 4], labels=["0.75", "1", "1.5", "2", "3", "4"])
+    ax.minorticks_off()  # plain numbers, not 2×10⁰ minor-tick labels
     ax.set_xlabel("Batch size B")
     ax.set_ylabel("Xie's δ at the switch (mean over\nhidden matrices and 5 seeds)")
-    ax.legend(fontsize=7.5, loc="upper left")
     return fig
 
 
 def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
     figures = [("e4_delta_vs_batch", figure_delta_vs_batch())]
-    summary_path = REPO / "results" / "e3_branches" / "evaluation_summary.json"
-    if summary_path.exists():
-        figures.append(("e3_relative_change", figure_relative_change(json.loads(summary_path.read_text()))))
-    else:
-        print("no E3 evaluation summary yet; only the E4 figure is drawn")
+    for name, file, followup in (("e3_relative_change", "evaluation_summary.json", False),
+                                 ("e3_relative_change_followup", "evaluation_summary_followup.json", True)):
+        summary_path = REPO / "results" / "e3_branches" / file
+        if summary_path.exists():
+            figures.append((name, figure_relative_change(json.loads(summary_path.read_text()), followup)))
+        else:
+            print(f"no {file} yet; {name} not drawn")
     for name, fig in figures:
         for ext in ("pdf", "png"):
             fig.savefig(FIGURES / f"{name}.{ext}")

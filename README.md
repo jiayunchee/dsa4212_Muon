@@ -2,10 +2,11 @@
 
 **Repository:** https://github.com/jiayunchee/dsa4212_Muon
 
-**Status, 20 Oct 2026:**
+**Status, 27 Oct 2026:**
 
-- The experiment protocol is fixed in `notes/protocol.md`.
-- The baselines (E1) are run; the main experiments (E2–E4) are in progress.
+- The experiment protocol is fixed in `notes/protocol.md`; later changes are in its change log.
+- E1–E4 and the per-second timing are run.
+- Follow-up F1 (p = −0.5 and −0.75, not pre-registered) is in progress.
 - The report has not been started.
 
 Authors are listed in `authors.md`.
@@ -45,13 +46,17 @@ Run every command from the repository root.
 | E1 baselines | `python code/run.py configs/e1a_baselines_adamw_sgd.yaml --workers 4`, then `configs/e1a_ext_sgd_b1024.yaml`, then `configs/e1b_baselines_muon.yaml` | ~15 + 1 + 35 min |
 | E1 analysis and figures | `python code/analyze_tuning.py results/e1_baselines` and `python code/plot_e1.py` | seconds |
 | E2 shared phase | `python code/run.py configs/e2_shared.yaml --workers 4` | ~10 min |
-| E3 tuning branches | `python code/run.py configs/e3a_branches_tune.yaml --workers 4`, then `python code/analyze_branches.py select` | ~50 min |
-| E3 evaluation branches | `python code/run.py configs/e3b_branches_eval.yaml --workers 4`, then `python code/analyze_branches.py evaluate` and `python code/plot_e3.py` | ~25 min |
+| E3 frozen control (exploratory) | `python code/run.py configs/e3c_control_frozen.yaml --workers 4` | ~10 min |
+| E3 branches: tuning, extensions, selection, evaluation, figures | `python code/run_branches.py`. It runs `e3a`, the extensions `e3a_ext1`–`e3a_ext3` (148, 28 and 6 runs), `select`, `e3b`, `evaluate` and `plot_e3.py`, in that order | ~1 h 45 min |
+| F1 follow-up (not pre-registered; needs E3) | `python code/run_branches.py --followup`. The same steps with `f1a`, `f1a_ext<k>` and `f1b` | ~1–1.5 h |
+| E3, E4 and F1 figures only | `python code/plot_e3.py` | seconds |
 | Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` | ~5 min |
+| Per-second comparison | `python code/analyze_time.py` (needs E1 and the timing benchmark) | seconds |
 
 **Notes on running.**
 
 - Sweeps can be resumed: a run whose result file exists is skipped.
+- The branch steps can also be run one at a time: `run.py <config>`, then `analyze_branches.py extend | select | evaluate [--followup]`. `select` and `evaluate` refuse while a tuning run is unfinished, a best multiplier sits on an edge that can still be extended, or the evaluation config predates the latest tuning runs (protocol Section 6). `extend` says which config to run next.
 - Each run writes a JSON record to `results/<experiment>/`. It holds the config, seed, git commit, package versions, the full evaluation history and a summary.
 - Checkpoints go to `checkpoints/`. They are not committed; rerun E2 to regenerate them.
 
@@ -60,7 +65,7 @@ Run every command from the repository root.
 | Path | Contents |
 |---|---|
 | `code/muonlab/` | Update rules (`optim.py`), MLP, teacher–student data, noise diagnostics, training loop with branching, sweep runner |
-| `code/*.py` | Command-line entry points: run, analyse, plot, benchmark, smoke test |
+| `code/*.py` | Command-line entry points: run, run a branch stage, analyse, plot, benchmark, smoke test |
 | `code/checks/` | One-off investigations, kept so they can be re-run |
 | `configs/` | One YAML file per experiment |
 | `tests/` | Unit tests (pytest) |

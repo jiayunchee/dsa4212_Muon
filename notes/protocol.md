@@ -155,6 +155,15 @@ This is the model family Xie used for the frozen-gradient measurements.
 
 **Stopping rule (27 Oct).** This rule was fixed after round 1, which left 7 edge cells, and before round 2 was run. Multipliers never go beyond the range 1/64 to 64. A cell whose best value is still on the edge at that limit is accepted as it is and reported. The reason: on a flat plateau, "best at the edge" can come from seed noise alone, and extension would otherwise never stop.
 
+**Follow-up F1 (27 Oct; not pre-registered).** E3 put p* = −0.25 in all eight conditions. That is the most negative exponent tested, so the optimum was not bracketed. F1 adds p = −0.5 and p = −0.75 as new branches from the same E2 checkpoints:
+- the same tuning rules (multipliers {0.5, 1, 2} on the tuning seeds, then the edge extension and the stopping rule above);
+- the same evaluation seeds;
+- configs `configs/f1a_*.yaml` and `configs/f1b_branches_eval.yaml`.
+
+`analyze_branches.py evaluate --followup` compares all eight arms and writes `results/e3_branches/evaluation_summary_followup.json`. The pre-registered E3 summary and its verdicts on H1–H3 stay as they are. Anything F1 adds is reported as exploratory.
+
+**Selection guard (27 Oct).** F1's first selection was made three seconds after `extend` had written its extension config, before those runs existed (lab notebook, 27 Oct). Now `select` refuses while any tuning run is unfinished or any best multiplier sits on an edge that can still be extended. `evaluate` uses only the evaluation runs at the selected multipliers, so runs from a superseded selection stay on disk but are not used. Later the same day, after the ×4/×8 runs, `evaluate --followup` was re-run on the old ×2 selection without a new `select`. So `evaluate` now also refuses while tuning is unfinished, or when a multiplier in an evaluation config is no longer the best on the tuning seeds. `code/run_branches.py` runs a stage's steps in this order.
+
 ## 7. Implementation checks (must pass before E1)
 
 Unit tests (`tests/`), via pytest:

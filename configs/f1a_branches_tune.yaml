@@ -1,0 +1,36 @@
+# F1 follow-up, tuning stage (added 27 Oct 2026; NOT pre-registered). E3 found p* = -0.25 in every
+# condition, which is the most negative exponent tested, so the optimum is not bracketed. F1 adds
+# p = -0.5 and p = -0.75, branched from the same E2 checkpoints, with the same initial multiplier
+# grid {0.5, 1, 2} and the same tuning rules (protocol Section 6). Then:
+#   python code/analyze_branches.py extend --followup   (repeat until no edges remain)
+#   python code/analyze_branches.py select --followup   (writes configs/f1b_branches_eval.yaml)
+experiment: e3_branches
+
+base:
+  seed: 0
+  threads: 1
+  task: {d_in: 128, teacher_hidden: [64, 64], d_out: 16, power: 1.0, label_noise: 0.5, teacher_seed: 0}
+  eval_size: 16384
+  eval_seed: 12345
+  model: {widths: [128, 256, 256, 256, 16], activation: tanh}
+  batch_size: 16
+  steps: 3000
+  eval_every: 50
+  schedule: constant
+  optimizer: {name: muon, update: spectral, p: 0.0, momentum: 0.95, lr: 0.01, adam_lr: 1.0e-3}  # overwritten by the checkpoint
+  branch:
+    checkpoint: "checkpoints/e2_shared/shared_B{batch_size}_m{optimizer.momentum}_s{seed}_step3000.pt"
+    lr_multiplier: 1.0
+
+grid:
+  batch_size: [16, 64, 256, 1024]
+  optimizer.momentum: [0.9, 0.95]
+  seed: [0, 1]
+
+arms:
+  - label: p-0.75
+    set: {branch: {update: spectral, p: -0.75, normalize: true}}
+    sweep: {branch.lr_multiplier: [0.5, 1.0, 2.0]}
+  - label: p-0.5
+    set: {branch: {update: spectral, p: -0.5, normalize: true}}
+    sweep: {branch.lr_multiplier: [0.5, 1.0, 2.0]}
