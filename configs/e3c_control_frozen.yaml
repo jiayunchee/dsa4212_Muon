@@ -1,0 +1,31 @@
+# E3c exploratory control (added 27 Oct 2026 after seeing tuning-seed results; NOT a pre-registered
+# test). From each E2 checkpoint, continue 3000 steps with the hidden matrices frozen (multiplier 0)
+# while AdamW keeps training the first layer, output layer and biases. Question: are the SGD-like
+# arms at tiny step sizes (best at 1/32-1/64 at B = 16) any better than not updating the hidden
+# layers at all? Results go to results/e3_controls/, separate from the pre-registered E3 analysis.
+experiment: e3_controls
+
+base:
+  seed: 0
+  threads: 1
+  task: {d_in: 128, teacher_hidden: [64, 64], d_out: 16, power: 1.0, label_noise: 0.5, teacher_seed: 0}
+  eval_size: 16384
+  eval_seed: 12345
+  model: {widths: [128, 256, 256, 256, 16], activation: tanh}
+  batch_size: 16
+  steps: 3000
+  eval_every: 50
+  schedule: constant
+  optimizer: {name: muon, update: spectral, p: 0.0, momentum: 0.95, lr: 0.01, adam_lr: 1.0e-3}  # overwritten by the checkpoint
+  branch:
+    checkpoint: "checkpoints/e2_shared/shared_B{batch_size}_m{optimizer.momentum}_s{seed}_step3000.pt"
+    update: plain
+    lr_multiplier: 0.0
+
+grid:
+  batch_size: [16, 64, 256, 1024]
+  optimizer.momentum: [0.9, 0.95]
+  seed: [0, 1, 2, 3, 4]
+
+arms:
+  - label: frozen

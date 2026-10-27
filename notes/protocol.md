@@ -149,6 +149,12 @@ This is the model family Xie used for the frozen-gradient measurements.
 - Tuning seeds and evaluation seeds are kept separate.
 - Everything runs on the CPU in float32 with fixed thread counts. bf16 is 200–400× slower on this CPU (lab notebook, 15 Oct), so NS5 runs in fp32. This deviates from the bf16 reference implementations; noted as a limitation.
 
+**Change log for E3 tuning (26 Oct).** After E3a, 37 of the 48 (arm, B, β) cells had their best multiplier on the edge of the {0.5, 1, 2} grid: 16 at the low edge and 21 at the high edge. Under the rule above, `code/analyze_branches.py extend` adds two more multipliers beyond each edge (halving, or doubling) on the tuning seeds. It writes `configs/e3a_ext<k>_branches_tune.yaml` and is repeated until no edges remain; only then does `select` write the E3b config. The edges were systematic: p = −0.25 preferred larger steps, p ∈ {0.5, 1} smaller ones, and continued Muon and NS5 larger ones at B ≥ 64. This is the step-size/shape coupling that Section 2 controls for.
+
+**Exploratory control (27 Oct; not pre-registered).** The tuning seeds showed something odd. At B = 16 the SGD-like arms (p = 1, Xie) did best at multipliers of 1/32–1/64, with the outcome flat across a 16× range. A possible confound: their hidden layers are effectively frozen while AdamW keeps training the other layers. To test it, `configs/e3c_control_frozen.yaml` continues every checkpoint with the hidden matrices frozen (results in `results/e3_controls/`). The evaluation step reports it in a separate, labelled section.
+
+**Stopping rule (27 Oct).** This rule was fixed after round 1, which left 7 edge cells, and before round 2 was run. Multipliers never go beyond the range 1/64 to 64. A cell whose best value is still on the edge at that limit is accepted as it is and reported. The reason: on a flat plateau, "best at the edge" can come from seed noise alone, and extension would otherwise never stop.
+
 ## 7. Implementation checks (must pass before E1)
 
 Unit tests (`tests/`), via pytest:
