@@ -1,13 +1,14 @@
-"""Figures 1 and 3 of the report (see report/outline.md). Experiment-level figures come from plot_e1.py and plot_e3.py.
+"""Figures 1-3 of the report (see report/outline.md). Experiment-level figures come from plot_e1.py and plot_e3.py.
 
 Usage:  python code/plot_report.py
 Reads results/e1_baselines/*.json, results/timing/per_second_summary.json (from analyze_time.py) and
-results/e3_branches/evaluation_summary_followup.json (from `analyze_branches.py evaluate --followup`).
-Writes report/figures/fig1_step_vs_time.pdf/.png and fig3_f1_exponent_shift.pdf/.png.
+results/e3_branches/evaluation_summary*.json (from `analyze_branches.py evaluate [--followup]`).
+Writes report/figures/fig1_step_vs_time, fig2_e3_relative_change and fig3_f1_exponent_shift (.pdf/.png).
 
 Figure 1: the tuned E1 baselines against batch size, (a) at equal steps: tail excess risk over the last 10% of
 6000 steps, the protocol's outcome, mean of 2 seeds; (b) at equal wall-clock time: the seed-averaged curve read
 at the time SGD needs for 6000 steps. The y-axis is shared, so the shift between panels is the cost of slower steps.
+Figure 2: the pre-registered E3 figure from plot_e3.py without its title, which the report's caption replaces.
 Figure 3 (exploratory, F1): (a, b) change against continuing Muon for p <= 0, one panel per momentum, each batch
 size's best p enlarged; (c) the paired difference p = -0.5 minus p = -0.25 against batch size.
 Colours: categorical slots 1-4 (optimisers) and 1-2 (momenta), and the ordinal blue ramp (batch size), all passing
@@ -27,7 +28,7 @@ import numpy as np  # noqa: E402
 from scipy import stats  # noqa: E402
 
 import plot_e1  # noqa: E402  (its rcParams and optimiser colours)
-from plot_e3 import BATCH_COLOURS, INK, INK_2, MOMENTUM_COLOURS, relative_change  # noqa: E402
+from plot_e3 import BATCH_COLOURS, INK, INK_2, MOMENTUM_COLOURS, figure_relative_change, relative_change  # noqa: E402
 
 REPO = Path(__file__).resolve().parents[1]
 FIGURES = REPO / "report" / "figures"
@@ -64,6 +65,12 @@ def figure_step_vs_time():
     axes[0].set_ylabel("Excess risk (log scale)")
     handles, labels = axes[0].get_legend_handles_labels()
     fig.legend(handles, labels, loc="upper center", ncol=4, bbox_to_anchor=(0.5, -0.08), fontsize=7.5)
+    return fig
+
+
+def figure_e3():
+    fig = figure_relative_change(json.loads((REPO / "results" / "e3_branches" / "evaluation_summary.json").read_text()))
+    fig.suptitle("")  # the caption explains the axes
     return fig
 
 
@@ -128,7 +135,8 @@ def figure_exponent_shift():
 
 def main() -> None:
     FIGURES.mkdir(parents=True, exist_ok=True)
-    for name, fig in (("fig1_step_vs_time", figure_step_vs_time()), ("fig3_f1_exponent_shift", figure_exponent_shift())):
+    for name, fig in (("fig1_step_vs_time", figure_step_vs_time()), ("fig2_e3_relative_change", figure_e3()),
+                      ("fig3_f1_exponent_shift", figure_exponent_shift())):
         for ext in ("pdf", "png"):
             fig.savefig(FIGURES / f"{name}.{ext}")
         print(f"wrote report/figures/{name}.pdf/.png")

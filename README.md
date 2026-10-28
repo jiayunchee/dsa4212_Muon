@@ -50,7 +50,9 @@ Run every command from the repository root.
 | E3 branches: tuning, extensions, selection, evaluation, figures | `python code/run_branches.py`. It runs `e3a`, the extensions `e3a_ext1`–`e3a_ext3` (148, 28 and 6 runs), `select`, `e3b`, `evaluate` and `plot_e3.py`, in that order | ~1 h 45 min |
 | F1 follow-up (not pre-registered; needs E3) | `python code/run_branches.py --followup`. The same steps with `f1a`, `f1a_ext1`–`f1a_ext3` (64, 48 and 4 runs) and `f1b` | ~1 h 10 min |
 | E3, E4 and F1 figures only | `python code/plot_e3.py` | seconds |
-| Report Figures 1 and 3 (need E1, the timing step and F1) | `python code/plot_report.py` | seconds |
+| Report Figures 1–3 (need E1, the timing step, E3 and F1) | `python code/plot_report.py` | seconds |
+| Report Tables 2 and A1 | `python code/make_tables.py` | seconds |
+| Report PDF | Compile `report/main.tex` with pdflatex and bibtex, or on Overleaf | — |
 | Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` (5 passes; the median per cell is kept) | ~5 min |
 | Per-second comparison | `python code/analyze_time.py` (needs E1 and the timing benchmark) | seconds |
 
@@ -71,7 +73,8 @@ Run every command from the repository root.
 | `configs/` | One YAML file per experiment |
 | `tests/` | Unit tests (pytest) |
 | `results/` | Saved numerical results (committed) |
-| `report/figures/` | Figures generated from `results/` |
+| `report/` | `main.tex` (report source), `references.bib`, and `outline.md` (plan, page budget, where each number comes from) |
+| `report/figures/`, `report/tables/` | Figures and tables generated from `results/` |
 | `notes/` | Protocol, lab notebook, reading list, novelty check |
 
 ## Known limitations
