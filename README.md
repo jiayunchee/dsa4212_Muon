@@ -2,11 +2,11 @@
 
 **Repository:** https://github.com/jiayunchee/dsa4212_Muon
 
-**Status, 27 Oct 2026:**
+**Status, 28 Oct 2026:**
 
 - The experiment protocol is fixed in `notes/protocol.md`; later changes are in its change log.
 - E1–E4 and the per-second timing are run.
-- Follow-up F1 (p = −0.5 and −0.75, not pre-registered) is in progress.
+- Follow-up F1 (p = −0.5 and −0.75, not pre-registered) is complete.
 - The report has not been started.
 
 Authors are listed in `authors.md`.
@@ -48,7 +48,7 @@ Run every command from the repository root.
 | E2 shared phase | `python code/run.py configs/e2_shared.yaml --workers 4` | ~10 min |
 | E3 frozen control (exploratory) | `python code/run.py configs/e3c_control_frozen.yaml --workers 4` | ~10 min |
 | E3 branches: tuning, extensions, selection, evaluation, figures | `python code/run_branches.py`. It runs `e3a`, the extensions `e3a_ext1`–`e3a_ext3` (148, 28 and 6 runs), `select`, `e3b`, `evaluate` and `plot_e3.py`, in that order | ~1 h 45 min |
-| F1 follow-up (not pre-registered; needs E3) | `python code/run_branches.py --followup`. The same steps with `f1a`, `f1a_ext<k>` and `f1b` | ~1–1.5 h |
+| F1 follow-up (not pre-registered; needs E3) | `python code/run_branches.py --followup`. The same steps with `f1a`, `f1a_ext1`–`f1a_ext3` (64, 48 and 4 runs) and `f1b` | ~1 h 10 min |
 | E3, E4 and F1 figures only | `python code/plot_e3.py` | seconds |
 | Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` | ~5 min |
 | Per-second comparison | `python code/analyze_time.py` (needs E1 and the timing benchmark) | seconds |
