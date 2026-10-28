@@ -50,6 +50,7 @@ Run every command from the repository root.
 | E3 branches: tuning, extensions, selection, evaluation, figures | `python code/run_branches.py`. It runs `e3a`, the extensions `e3a_ext1`–`e3a_ext3` (148, 28 and 6 runs), `select`, `e3b`, `evaluate` and `plot_e3.py`, in that order | ~1 h 45 min |
 | F1 follow-up (not pre-registered; needs E3) | `python code/run_branches.py --followup`. The same steps with `f1a`, `f1a_ext1`–`f1a_ext3` (64, 48 and 4 runs) and `f1b` | ~1 h 10 min |
 | E3, E4 and F1 figures only | `python code/plot_e3.py` | seconds |
+| Report Figures 1 and 3 (need E1, the timing step and F1) | `python code/plot_report.py` | seconds |
 | Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` | ~5 min |
 | Per-second comparison | `python code/analyze_time.py` (needs E1 and the timing benchmark) | seconds |
 

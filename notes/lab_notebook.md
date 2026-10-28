@@ -66,7 +66,7 @@ Each cell is the change in tail excess risk against continuing Muon: the mean of
   - At B = 64, β = 0.95 (δ = 1.84), p\* = −0.25. At B = 256, β = 0.9 (δ = 1.77), it is −0.5.
   - At each B, raising β from 0.9 to 0.95 raises δ by 56–60% without changing p\*.
   - With p\* on a 0.25-spaced grid and only two levels observed, δ's role cannot be separated from B's.
-- **The differences are small.** p = −0.5 and p = −0.25 differ by 1–4%, against 12–42% to the SGD-like arms. Practical reading: flatten at least as much as Muon, a little more at large batch.
+- **The differences are small.** p = −0.5 and p = −0.25 differ by 1–4%, against 12–41% to the SGD-like arms. Practical reading: flatten at least as much as Muon, a little more at large batch.
 - **The step-size tuning decided the answer.**
   - At ×2 (the provisional evaluation of 27 Oct), p = −0.5 looked up to 43% worse than Muon.
   - At its tuned step size it is between 1.2% worse and 9.0% better.
