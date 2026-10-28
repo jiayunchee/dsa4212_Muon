@@ -2,6 +2,49 @@
 
 A dated record of what was done, what was observed and what was decided. Newest entries go at the top. Measured facts and interpretations are kept apart.
 
+## 2026-10-28, later: timing re-check; the benchmark now keeps the median of 5 passes
+
+### Done
+
+- Kept the 27 Oct measurement as `results/timing/step_time_threads1_20261027.json`.
+- Re-ran `code/benchmark_step_time.py` once (11:29, 52 s), kept as `step_time_threads1_20261028_single.json`.
+  - It did not reproduce NS5's spike at B = 64.
+  - Other cells moved a lot, though; SGD at B = 64 went from 0.55 to 0.83 ms.
+- So the benchmark now makes 5 full passes and keeps the median per cell, storing every pass in the file (protocol change log, 28 Oct). It ran 11:31–11:35 and wrote `step_time_threads1.json`.
+- Re-ran `analyze_time.py` (the per-second summary and `e1_vs_time`) and `plot_report.py` (Figure 1).
+- **Conditions:** load average about 5 throughout, with WindowServer, Defender, Chrome and the Claude app running, on mains power. The load on 27 Oct was not recorded.
+
+### Results (measured)
+
+Median ms per step over 5 passes [min–max over passes]:
+
+| Arm | B = 16 | B = 64 | B = 256 | B = 1024 |
+|---|---|---|---|---|
+| AdamW | 0.50 [0.44–0.65] | 1.03 [0.66–1.17] | 1.40 [1.28–1.57] | 4.01 [3.65–4.18] |
+| SGD | 0.47 [0.33–0.54] | 0.79 [0.45–0.88] | 1.23 [1.18–1.47] | 3.58 [3.47–4.20] |
+| NS5 Muon | 3.64 [3.48–4.31] | 3.96 [3.45–4.20] | 4.17 [3.92–4.50] | 5.60 [5.43–6.05] |
+| exact Muon | 9.67 [9.50–10.57] | 10.26 [9.79–10.44] | 10.66 [10.57–11.06] | 11.45 [11.41–11.76] |
+
+- **NS5's step time now rises smoothly with B.** The 27 Oct value at B = 64 (4.55 ms) was a one-off.
+- **The sub-millisecond steps varied most between passes:** up to 1.95× for SGD at B = 64. The median cell varied by 1.21×.
+- **Against the 27 Oct pass,** cells moved by −13% to +71%; the cheap optimisers slowed most.
+- **Muon's overhead over SGD:** 2.0–3.2 ms per step for NS5 and 7.9–9.5 ms for exact SVD.
+
+The per-second winner at each batch size under each timing set (excess risk at SGD's 6000-step time):
+
+| Timing set | B = 16 | B = 64 | B = 256 | B = 1024 |
+|---|---|---|---|---|
+| 27 Oct, 1 pass | SGD | SGD | SGD | NS5 (0.0072 vs 0.0079) |
+| 28 Oct, 1 pass | SGD | SGD | SGD | NS5 (0.0060 vs 0.0079) |
+| 28 Oct, median of 5 | SGD | SGD | SGD | NS5 (0.0058 vs 0.0079) |
+
+At B ≤ 256, NS5 has 1.3–2.9× SGD's excess risk at equal time, across the three sets.
+
+### Interpretation
+
+- **The per-second conclusion survives the timing noise.** SGD wins at B ≤ 256 and NS5 Muon at B = 1024 under every timing set. Only the size of NS5's lead at B = 1024 is uncertain (10–27%).
+- **A quiet machine cannot be guaranteed while the session runs,** so repeated passes and medians are the practical fix. The report should state the load and this robustness check.
+
 ## 2026-10-28: F1 finished; p* moves from −0.25 (B ≤ 64) to −0.5 (B ≥ 256)
 
 F1 is exploratory: it was added after E3's results (protocol change log, 27 Oct). Nothing here changes the pre-registered E3 verdicts.

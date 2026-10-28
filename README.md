@@ -51,7 +51,7 @@ Run every command from the repository root.
 | F1 follow-up (not pre-registered; needs E3) | `python code/run_branches.py --followup`. The same steps with `f1a`, `f1a_ext1`–`f1a_ext3` (64, 48 and 4 runs) and `f1b` | ~1 h 10 min |
 | E3, E4 and F1 figures only | `python code/plot_e3.py` | seconds |
 | Report Figures 1 and 3 (need E1, the timing step and F1) | `python code/plot_report.py` | seconds |
-| Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` | ~5 min |
+| Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` (5 passes; the median per cell is kept) | ~5 min |
 | Per-second comparison | `python code/analyze_time.py` (needs E1 and the timing benchmark) | seconds |
 
 **Notes on running.**
@@ -80,3 +80,4 @@ Run every command from the repository root.
 - **float32 throughout,** whereas the reference implementations use bfloat16. bfloat16 is 200–400× slower on this CPU; see the lab notebook (15 Oct).
 - **Exact-SVD Muon is not Newton–Schulz Muon;** both are reported.
 - **Few seeds:** 2 seeds for tuning, 3 for evaluation.
+- **Step timings depend on machine load:** the sub-millisecond steps varied by up to 2× between benchmark passes. Per-second results therefore use the median of 5 passes, and their conclusions are checked against single passes (lab notebook, 28 Oct).

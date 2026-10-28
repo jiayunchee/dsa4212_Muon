@@ -164,6 +164,8 @@ This is the model family Xie used for the frozen-gradient measurements.
 
 **Selection guard (27 Oct).** F1's first selection was made three seconds after `extend` had written its extension config, before those runs existed (lab notebook, 27 Oct). Now `select` refuses while any tuning run is unfinished or any best multiplier sits on an edge that can still be extended. `evaluate` uses only the evaluation runs at the selected multipliers, so runs from a superseded selection stay on disk but are not used. Later the same day, after the ×4/×8 runs, `evaluate --followup` was re-run on the old ×2 selection without a new `select`. So `evaluate` now also refuses while tuning is unfinished, or when a multiplier in an evaluation config is no longer the best on the tuning seeds. `code/run_branches.py` runs a stage's steps in this order.
 
+**Timing benchmark (28 Oct).** A re-run of E-T did not reproduce NS5's step time at B = 64 (4.55 ms on 27 Oct, against 2.37 and 2.85 ms at its neighbours). It also showed that single passes are noisy: the sub-millisecond steps (SGD, AdamW) varied by up to 2× between passes, and the machine was not quiet (load average about 5). `code/benchmark_step_time.py` now makes 5 full passes and keeps the median per cell, and per-second results use these medians. The per-second winner at each batch size is the same under the 27 Oct pass, a single 28 Oct pass and the 5-pass medians (lab notebook, 28 Oct).
+
 ## 7. Implementation checks (must pass before E1)
 
 Unit tests (`tests/`), via pytest:

@@ -104,14 +104,15 @@ Each section starts with what the reader should come away believing.
   - Exact Muon is 37.5 / 25.2 / 29.1 / 45.1% below the better baseline (SGD each time) at B = 16 / 64 / 256 / 1024.
   - NS5 ≈ exact Muon (−0.2% to +2.4%).
 - **Best learning rates** (one sentence, or in Section 7): from B = 16 to 1024, SGD's rises 10× and AdamW's 3×, while Muon's falls from 0.003 to 0.001.
-- **Per second** (1 thread, quiet machine):
-  - Muon's overhead over SGD is 1.9–4.0 ms per step for NS5 and 8.2–9.4 ms for exact SVD.
-  - In the time SGD needs for 6000 steps, SGD wins at B ≤ 256, and NS5 Muon wins narrowly at B = 1024 (0.0072 vs 0.0079).
+- **Per second** (1 thread; median of 5 benchmark passes):
+  - Muon's overhead over SGD is 2.0–3.2 ms per step for NS5 and 7.9–9.5 ms for exact SVD.
+  - In the time SGD needs for 6000 steps, SGD wins at B ≤ 256, where NS5 has 1.3–2.9× SGD's excess risk. NS5 Muon wins at B = 1024 (0.0058 vs 0.0079).
+  - The winner at each batch size is the same under all three timing sets we measured (27 Oct; 28 Oct single pass; 28 Oct median of 5). Only the margins move: NS5's lead at B = 1024 is 10–27%.
 - **Why equal tuning matters:** one sentence on the pilot, whose reversed ranking came from untuned Muon learning rates.
 - **Figure 1** (`fig1_step_vs_time`), two panels with a shared log y-axis:
   - (a) tail excess risk against B at 6000 steps;
   - (b) excess risk against B at equal wall-clock time (SGD's 6000-step time).
-- **Caution:** these timings are CPU-specific. NS5's step time at B = 64 (4.55 ms) needs a re-run before it is quoted.
+- **Caution:** these timings are CPU-specific, and they vary with machine load (the sub-millisecond steps by up to 2× between passes). Report the 5-pass medians together with the robustness check above. The 27 Oct NS5 value at B = 64 was a one-off and did not recur.
 
 ### 5. Pre-registered test (1.5)
 
@@ -248,7 +249,7 @@ Cite a source only for claims in the parts we have read (the rule in `notes/read
 
 1. **From the group:** names and student numbers, the deadline, the rubric and any template. Then decide who writes which section.
 2. ~~Make Figures 1 and 3.~~ Done on 28 Oct (`code/plot_report.py`).
-3. Re-run the timing benchmark for NS5 at B = 64, then `analyze_time.py` and `plot_report.py`, before Figure 1 is final.
+3. ~~Re-run the timing benchmark for NS5 at B = 64.~~ Done on 28 Oct. The benchmark now keeps the median of 5 passes, the NS5 spike did not recur, the per-second winners are unchanged, and Figure 1 has been updated.
 4. Read the sources marked above.
 5. Decide on E5 (deep noise) once the deadline is known. Without E5, the verdict on H2 is "not supported in our noise regime", not "refuted".
 6. Set up `report/main.tex` with these headings, and the page budget as comments.

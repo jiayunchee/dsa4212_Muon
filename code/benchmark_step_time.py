@@ -3,8 +3,11 @@
 Sweep runs share the CPU (several workers), so their timings include contention. Per-second
 comparisons in the report use this benchmark instead (notes/protocol.md, Section 5).
 
-Usage:  python code/benchmark_step_time.py [--threads 1] [--steps 300]
-Writes results/timing/step_time_threads<k>.json and prints a table.
+Each pass times every arm at every batch size (median over steps). The result per cell is the
+median over passes, because the sub-millisecond steps varied by up to 2x between passes (28 Oct).
+
+Usage:  python code/benchmark_step_time.py [--threads 1] [--steps 300] [--repeats 5]
+Writes results/timing/step_time_threads<k>.json (the medians, plus every pass) and prints a table.
 """
 
 import argparse
@@ -56,20 +59,26 @@ def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--threads", type=int, default=1)
     parser.add_argument("--steps", type=int, default=300)
+    parser.add_argument("--repeats", type=int, default=5, help="full passes over all arms; the median is kept")
     args = parser.parse_args()
     torch.set_num_threads(args.threads)
     batch_sizes = [16, 64, 256, 1024]
-    table = {arm: {} for arm in ARMS}
-    print(f"median ms per step (forward + backward + optimiser), {args.threads} thread(s)")
-    print(f"{'arm':28s}" + "".join(f"{f'B={b}':>10s}" for b in batch_sizes))
-    for arm, cfg in ARMS.items():
-        for b in batch_sizes:
-            table[arm][b] = time_arm(cfg, b, args.steps)
-        print(f"{arm:28s}" + "".join(f"{table[arm][b]:10.2f}" for b in batch_sizes), flush=True)
+    passes = []
+    for k in range(args.repeats):  # whole passes, so a slow spell on the machine hits every cell alike
+        passes.append({arm: {b: time_arm(cfg, b, args.steps) for b in batch_sizes} for arm, cfg in ARMS.items()})
+        print(f"pass {k + 1}/{args.repeats} done", flush=True)
+    table = {arm: {b: statistics.median(p[arm][b] for p in passes) for b in batch_sizes} for arm in ARMS}
+    print(f"median ms per step (forward + backward + optimiser), {args.threads} thread(s), "
+          f"median of {args.repeats} passes [min-max over passes]")
+    print(f"{'arm':28s}" + "".join(f"{f'B={b}':>18s}" for b in batch_sizes))
+    for arm in ARMS:
+        print(f"{arm:28s}" + "".join(f"{table[arm][b]:7.2f} [{min(p[arm][b] for p in passes):4.2f}-"
+                                     f"{max(p[arm][b] for p in passes):5.2f}]" for b in batch_sizes))
     out = Path(__file__).resolve().parents[1] / "results" / "timing" / f"step_time_threads{args.threads}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
-    out.write_text(json.dumps({"threads": args.threads, "steps": args.steps, "ms_per_step": table,
-                               "environment": environment_info(), "git": git_commit()}, indent=1))
+    out.write_text(json.dumps({"threads": args.threads, "steps": args.steps, "repeats": args.repeats,
+                               "ms_per_step": table, "passes": passes, "environment": environment_info(),
+                               "git": git_commit()}, indent=1))
     print(f"wrote {out}")
 
 

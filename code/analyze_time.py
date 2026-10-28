@@ -2,7 +2,7 @@
 
 Usage:  python code/analyze_time.py
 Reads results/e1_baselines/*.json (excess-risk curves at the tuned learning rates) and
-results/timing/step_time_threads1.json (median ms per step on a quiet machine, E-T).
+results/timing/step_time_threads1.json (median ms per step over 5 benchmark passes, E-T).
 
 With a constant learning rate, each curve is an "anytime" curve: step k of a 6000-step run is
 what a k-step run at that learning rate would give. Multiplying steps by ms/step puts every
