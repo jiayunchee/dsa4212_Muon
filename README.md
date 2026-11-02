@@ -7,7 +7,7 @@
 - The experiment protocol is fixed in `notes/protocol.md`; later changes are in its change log.
 - E1–E4 and the per-second timing are run.
 - Follow-up F1 (p = −0.5 and −0.75, not pre-registered) is complete.
-- The report has not been started.
+- A report draft is present in `report/main.tex`; author details and source review remain necessary before submission.
 
 Authors are listed in `authors.md`.
 
@@ -84,3 +84,14 @@ Run every command from the repository root.
 - **Exact-SVD Muon is not Newton–Schulz Muon;** both are reported.
 - **Few seeds:** 2 seeds for tuning, 3 for evaluation.
 - **Step timings depend on machine load:** the sub-millisecond steps varied by up to 2× between benchmark passes. Per-second results therefore use the median of 5 passes, and their conclusions are checked against single passes (lab notebook, 28 Oct).
+
+## Report claim traceability
+
+| Report item | Saved evidence | Generation or implementation |
+|---|---|---|
+| Baselines and equal-time comparison | `results/e1_baselines/tuning_summary.csv`, `results/timing/per_second_summary.json` | `code/analyze_tuning.py`, `code/analyze_time.py`, `code/plot_report.py` |
+| Branch comparisons and noise indicator | `results/e3_branches/evaluation_summary.json`, `results/e2_shared/` | `code/analyze_branches.py`, `code/muonlab/diagnostics.py`, `code/plot_report.py` |
+| Exploratory F1 | `results/e3_branches/evaluation_summary_followup.json` | `code/analyze_branches.py`, `code/plot_report.py` |
+| Tables and multipliers | branch summaries, `configs/e3b_branches_eval.yaml`, `configs/f1b_branches_eval.yaml` | `code/make_tables.py` |
+
+The report is a draft: the group must verify cited readings, numerical claims and author information before submission. Existing result files are skipped by sweeps; regenerate checkpoints from E2 as described above before running branches in a fresh checkout.

@@ -35,8 +35,7 @@
 
 % ---- Title block and abstract: 0.4 page. Abstract about 150 words. ----
 \begin{abstract}
-\todo{About 150 words: the question; the setup in one sentence; the four story sentences of the outline,
-compressed; one line saying which results are exploratory.}
+We study how the spectral shape of Muon's late-training update interacts with gradient noise in synthetic teacher--student regression. With separately tuned learning rates, Muon achieves lower excess risk than SGD and AdamW after 6000 steps at all four batch sizes, but a CPU timing benchmark shows that this advantage does not always carry over to equal estimated time. In paired branches from common checkpoints, the $p=-0.25$ update improves on continued exact Muon in all eight conditions. An exploratory extension finds that $p=-0.5$ is best among the tested exponents at the larger batch sizes. An initially incomplete tuning search changed the apparent ranking, illustrating the importance of tuning step size for each update shape. Our results are limited to one synthetic task, three evaluation seeds per branch condition, and the measured noise range.
 \end{abstract}
 
 % =====================================================================================================
@@ -50,7 +49,9 @@ compressed; one line saying which results are exploratory.}
 % - Our question: does the best late-phase exponent p in U S^p V^T depend on gradient noise?
 % - Contributions (3 bullets): fairly tuned per-step and per-second baselines; a pre-registered branch
 %   test over 8 noise conditions; an exploratory follow-up that brackets p*.
-\todo{Write.}
+Muon transforms the momentum updates of matrix-valued hidden weights. Its practical version uses a short Newton--Schulz iteration to approximately flatten the spectrum \citep{jordan2024muon}. Increasing the relative weight of weak directions may help optimisation, but may also amplify gradient noise. \citet{xie2026noise} analyse a noise-dominated regime where response-matched momentum can avoid a nonlinear residual introduced by orthogonalisation. \citet{wu2026dynmuon} instead motivate mildly negative powers late in training. These arguments address different settings and do not determine the outcome on our task.
+
+We ask whether the best tested late-phase exponent varies with noise conditions. We compare tuned baselines per step and estimated time, then compare spectral updates from shared checkpoints. Exploratory controls and added exponents investigate the outcome and its sensitivity to step-size selection.
 
 % =====================================================================================================
 \section{Background}\label{sec:background}
@@ -69,7 +70,9 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
   W \leftarrow W - \eta \sqrt{\max(1, m/n)}\; D_p .
   \label{eq:family}
 \end{equation}
-\todo{Write the rest.}
+For retained singular values, $p=0$ gives the exact polar update, $p=1$ gives a Frobenius-normalised momentum-like update, and $p<0$ gives smaller singular values relatively more weight. We discard singular values at or below $s_1\max(m,n)\epsilon$, with float32 machine precision $\epsilon$, before applying the power. The retained direction is normalised to norm $\sqrt r$. This threshold matters particularly for negative $p$. The separate Xie-style arm uses an unnormalised momentum direction and a matched rate, not the normalised $p=1$ rule. Practical NS5 approximates the polar factor and does not produce an identical spectrum \citep{jordan2024muon}.
+
+Xie's analysis motivates the signal-to-noise indicator $\delta$ and a matched switch \citep{xie2026noise}; DynMuon schedules the exponent across training \citep{wu2026dynmuon}. Our fixed-exponent branches do not implement the complete DynMuon schedule. Spectral shape and step size can be confounded, motivating separate tuning for each arm \citep{shumaylov2026special}.
 
 % =====================================================================================================
 \section{Setup and protocol}\label{sec:setup}
@@ -91,7 +94,11 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
 % - Pre-registration: protocol fixed 20 Oct; a dated change log records the extension rule, the stopping
 %   rule, the frozen control, F1 and the timing benchmark.
 % - Budget: 1179 training runs, all on one CPU in float32 (bf16 is about 200-400x slower on this CPU).
-\todo{Write.}
+We use a fixed random teacher and fresh minibatches, with input covariance eigenvalues proportional to $1/i$ and label noise standard deviation $0.5$. Excess risk is estimated as mean squared prediction difference from the noiseless teacher on 16,384 fixed inputs. The tanh student has widths $128$--$256$--$256$--$256$--$16$. Only its two $256\times256$ hidden matrices receive Muon or its variants; the input and output layers and biases use AdamW \citep{loshchilov2019adamw}, with weight decay zero.
+
+In E1, each optimiser and batch size starts with five learning rates; the SGD grid is extended at $B=1024$. E1 reports the same two seeds used to select rates, so selection can make those outcomes optimistic. For E3, exact Muon trains for 3000 steps before branching. Branches from the same condition and seed share the checkpoint and subsequent data stream, so their differences are paired. Each arm is tuned on seeds 0 and 1 and evaluated on seeds 2--4. Tuning begins at multipliers $\{0.5,1,2\}$ and extends the grid if the selected value is on an edge, so trial counts differ across cells. Table~\ref{tab:multipliers} gives selected multipliers. Paired $t$-intervals over three evaluation seeds are fragile.
+
+The E3 question, initial arms and comparisons were specified in the protocol; the tuning extension procedure and bounded stopping rule were subsequently documented during tuning. The frozen control and F1 were added after inspection and are exploratory. The timing procedure was changed to five-pass medians after a noisy single pass. The dated change log records these decisions. The per-layer indicator $\delta=\|\widehat{E G}\|_F/(\widehat\sigma_N\sqrt{mn})$ uses 32 fresh minibatch gradients, bias correction of the squared mean-gradient norm, and a momentum-noise calculation assuming stationarity and independent gradient noise. We average the estimate across both hidden matrices and seeds.
 
 \begin{table}[t]
   \centering
@@ -103,18 +110,18 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
          & Purpose                                                              & Runs              & Seeds        & Status         \\
     \midrule
     E0   & Pilot: timing and learning-rate ranges                               & 16                & 0            & pilot          \\
-    E1   & Baselines, learning rate tuned per optimiser and batch size          & 164               & 0, 1         & pre-registered \\
-    E2   & Shared exact-Muon phase (3000 steps), checkpoints                    & 40                & 0--4         & pre-registered \\
-    E3   & Branches $p \in \{-0.25, 0, 0.5, 1\}$, NS5, Xie: tuning / evaluation & 470 / 144         & 0, 1 / 2--4  & pre-registered \\
+    E1   & Baselines, learning rate tuned per optimiser and batch size          & 164               & 0, 1         & planned \\
+    E2   & Shared exact-Muon phase (3000 steps), checkpoints                    & 40                & 0--4         & planned \\
+    E3   & Branches $p \in \{-0.25, 0, 0.5, 1\}$, NS5, Xie: tuning / evaluation & 470 / 144         & 0, 1 / 2--4  & planned$^{c}$ \\
     E3c  & Branches with the hidden layers frozen                               & 40                & 0--4         & exploratory    \\
     F1   & Branches $p \in \{-0.75, -0.5\}$: tuning / evaluation                & 212 / 48$^{a}$    & 0, 1 / 2--4  & exploratory    \\
-    E-T  & Time per step, median of 5 passes                                    & --                & --           & pre-registered$^{b}$ \\
+    E-T  & Time per step, median of 5 passes                                    & --                & --           & amended$^{b}$ \\
     \bottomrule
   \end{tabular}
 
   \smallskip
   \footnotesize $^{a}$Plus 45 superseded runs at a step size selected before tuning had finished; kept,
-  not used. $^{b}$Changed on 28 Oct from one pass to the median of 5 passes (protocol change log).
+  not used. $^{b}$Changed on 28 Oct from one pass to the median of 5 passes. $^{c}$Tuning and stopping rules were amended during tuning; see the protocol change log.
 \end{table}
 
 % =====================================================================================================
@@ -131,7 +138,9 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
 %   NS5's lead at B = 1024 is 10-27%.
 % - One sentence on the pilot: its reversed ranking came from untuned Muon learning rates.
 % - Caution: the timings are CPU-specific and vary with machine load.
-\todo{Write.}
+At 6000 steps, exact Muon has approximately 37.5, 25.2, 29.1 and 45.1\% lower tail excess risk than the better baseline, SGD, at $B=16,64,256,1024$, respectively; NS5 is close to exact Muon (Figure~\ref{fig:baselines}). These are two-seed E1 results selected and evaluated on the same seeds. Tail risk averages measurements in the final 10\% of training.
+
+The equal-time comparison retains rates selected for 6000 steps rather than tuning separately for the time budget. It reads averaged E1 curves at the time SGD needs for 6000 steps, using median per-step times from five benchmark passes. On the tested CPU, SGD has lower estimated risk for $B\leq256$, whereas NS5 is lower at $B=1024$ (about 0.0058 versus 0.0079). Timing is hardware- and load-dependent. The pilot's different ranking also illustrates the importance of tuning before comparing methods.
 
 \begin{figure}[t]
   \centering
@@ -156,22 +165,23 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
 % - Verdicts: H1 contradicted, C = +0.00877 [+0.00833, +0.00922] (beta 0.9) and +0.00657 [+0.00617,
 %   +0.00698] (beta 0.95); H2 not supported; H3 not testable (p* constant).
 % - Disclose the design flaw: C compares absolute gaps, and excess risk is about 14x larger at B = 16.
-\todo{Write.}
+Table~\ref{tab:conditions} and Figure~\ref{fig:e3} show the paired evaluation. Relative to continuing exact Muon, $p=-0.25$ improves tail risk by approximately 2.4--7.6\% across conditions, while $p=1$ and the Xie-style switch increase it by about 12--41\% and 12--37\%, respectively. NS5 remains close to exact Muon. The best tested exponent in the original E3 grid is $-0.25$ in all eight conditions.
+
+The planned H1 contrast compares absolute $p=1$ minus $p=-0.25$ risk gaps at $B=16$ and $B=1024$; H1 predicts a negative contrast. The saved analysis instead gives $C=0.00877$ [0.00833, 0.00922] for $\beta=0.9$ and $0.00657$ [0.00617, 0.00698] for $\beta=0.95$ (paired 95\% intervals). This contradicts the specified direction, but absolute gaps are difficult to interpret when risk scales differ substantially across batches. The switch hypothesis is not supported in these conditions. The original H3 association cannot be assessed using the E3 best exponent because it is constant. Estimated $\delta$ ranges from 0.69 to 4.09; the strongly noise-dominated $\delta\ll1$ regime is not reached, so these results do not refute the switch in that regime.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig2_e3_relative_change}
-  \caption{Pre-registered test (E3). Change in tail excess risk when training continues from the same
+  \caption{E3 comparison (initially planned, with later tuning amendments). Change in tail excess risk when training continues from the same
   Muon checkpoint with spectral exponent $p$ instead of Muon ($p=0$), each arm at its own tuned step
-  size. Mean and 95\% $t$-interval over 3 evaluation seeds; below 0 is better than continuing Muon. In
-  every condition $p=-0.25$ is best and the SGD-like end ($p=1$) is worst.}
+  size. Mean and 95\% $t$-interval over 3 evaluation seeds; below 0 is better than continuing Muon. The $p=-0.25$ arm is best among the original spectral exponents in every condition; the SGD-like arms generally have the largest increases.}
   \label{fig:e3}
 \end{figure}
 
 \begin{table}[t]
   \centering
   \caption{Per condition: Xie's noise indicator $\delta$ at the switch; the best exponent among those
-  tested (E3: pre-registered; F1: exploratory, adds $p=-0.5$ and $p=-0.75$); and the change in tail
+  tested (E3: initially planned with later tuning amendments; F1: exploratory, adds $p=-0.5$ and $p=-0.75$); and the change in tail
   excess risk against continuing Muon, mean over 3 evaluation seeds.}
   \label{tab:conditions}
   \small
@@ -191,7 +201,9 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
 %   0.0672 vs 0.0675 at beta = 0.9); at B = 1024 they clearly beat it (0.0056 vs 0.0076).
 % - Scale-free contrast: -0.199 and -0.163 (H1's direction); the gain of p = -0.25 over Muon rises with
 %   delta (rho = +0.88).
-\todo{Write.}
+\textbf{These follow-ups were added after inspecting earlier results and are exploratory.} Since $-0.25$ was at the boundary of the original exponent grid, F1 added $p=-0.5$ and $-0.75$. Among the tested exponents, $-0.25$ has the lowest mean risk at $B\leq64$ and $-0.5$ at $B\geq256$, for both momenta (Figure~\ref{fig:f1}). The $-0.5$ versus $-0.25$ difference is modest: approximately 1.4--4.1\% worse at the smaller batches and 1.3--2.4\% better at the larger batches. Three paired evaluation seeds and an adaptively chosen follow-up limit certainty. A scale-free contrast points in H1's direction; it is a different, exploratory quantity and does not replace the planned absolute contrast.
+
+An early F1 selection was made before tuning extensions were complete. At the provisional multiplier $\times2$, $p=-0.5$ appeared up to 43\% worse than Muon in some conditions. Extending the tuning grid and selecting again changed the ranking; the scripts now guard against unfinished or stale selections. The exploratory frozen-hidden-layer control probes very small step sizes chosen for SGD-like branches. At $B=16$, $\beta=0.9$, mean risks are approximately 0.0672 for $p=1$ and 0.0675 when hidden matrices are frozen; at $B=1024$ they are 0.0056 and 0.0076. These comparisons suggest little hidden-layer contribution at small batch but do not establish its cause.
 
 \begin{figure}[t]
   \centering
@@ -219,16 +231,18 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
 %   seeds; p grid in steps of 0.25; equal steps across B (larger batches see more data); timing is
 %   hardware- and load-dependent; F1 not pre-registered. Without E5, H2 is "not supported in our noise
 %   regime", not "refuted".
-\todo{Write.}
+The results favour some additional flattening over continuing exact Muon on this task, consistent with the qualitative late-phase motivation of \citet{wu2026dynmuon}. They do not establish that a fixed negative exponent or a switch to SGD generalises to other tasks. The Xie-style switch is not supported in the tested range, which does not reach $\delta\ll1$ \citep{xie2026noise}. One possible explanation for weak small-batch SGD-like progress is ill-conditioning: a step small enough for strong directions may be ineffective for weak ones. The frozen control alone does not test this mechanism.
+
+Limitations include one synthetic task and small MLP, CPU float32 rather than accelerator timing, no weight decay, three branch evaluation seeds, and a coarse exponent grid. Equal steps across batches process unequal numbers of examples. Noisy timing, E1 tuning-seed reuse, protocol amendments and exploratory F1 restrict conclusions. The eight batch-size and momentum conditions are not independent replications of a causal noise intervention. Future work could target a lower measured $\delta$, evaluate selected E1 rates on new seeds and tune for a fixed time budget.
 
 \section{Conclusion}\label{sec:conclusion}
 % Budget: 0.2 page, about 110 words. Three lines: the main answer, the exploratory refinement, the
 % method lesson (per-arm step-size tuning decided every answer).
-\todo{Write.}
+On this synthetic task, Muon improved risk per step but not consistently per estimated CPU second. A mildly negative exponent improved the late-phase outcome across the original grid, and an exploratory extension suggested a small batch-dependent shift among negative exponents. The tuning history shows why comparisons of update shapes require careful step-size selection.
 
 % ---- References: about 0.5 page. Cite a source only for claims in parts we have read
 % (notes/reading_list.md); references.bib marks the entries still to read. ----
-\nocite{*}  % TODO: remove once the text cites; for now it lists every entry so the length shows
+
 \bibliographystyle{plainnat}
 \bibliography{references}
 
@@ -241,7 +255,7 @@ $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
 %   retries are counted in every run.
 % - Deviations from the protocol: one line per dated change-log entry.
 % - Reproduction: point to the README table; no commands here.
-\todo{Write.}
+Table~\ref{tab:multipliers} gives the selected branch multipliers. E3 extension rounds reduced edge cells from 37 to 7 to 3 to 0; F1 reduced them from 16 to 12 to 2 to 0. The control and F1 were exploratory; the tuning and timing amendments are dated in \texttt{notes/protocol.md}. Scripts, configurations, summaries and reproduction instructions are in the repository. Figure~\ref{fig:delta} shows the estimated indicator at the switch.
 
 \begin{table}[h]
   \centering
