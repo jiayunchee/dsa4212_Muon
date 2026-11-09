@@ -15,6 +15,7 @@
 \usepackage{parskip}
 \usepackage{amsmath,amssymb}
 \usepackage{graphicx}
+\usepackage{placeins}
 \usepackage{booktabs}
 \usepackage[font=small,labelfont=bf]{caption}
 \usepackage[round,authoryear]{natbib}
@@ -126,7 +127,7 @@ Each branch arm is tuned on seeds 0 and 1 and evaluated on seeds 2, 3 and 4. Tun
 
 The E3 question, initial arms and comparisons were specified in the protocol; the tuning extension procedure and bounded stopping rule were subsequently documented during tuning. The frozen control and F1 were added after inspection and are exploratory. The timing procedure was changed to five-pass medians after a noisy single pass. The dated change log records these decisions. The per-layer indicator $\delta=\|\widehat{E G}\|_F/(\widehat\sigma_N\sqrt{mn})$ uses 32 fresh minibatch gradients, bias correction of the squared mean-gradient norm, and a momentum-noise calculation assuming stationarity and independent gradient noise. We average the estimate across both hidden matrices and seeds.
 
-\begin{table}[t]
+\begin{table}[!htbp]
   \centering
   \caption{Experiment overview. E3 and F1 use separate tuning and evaluation seeds; E1 reports results on its tuning seeds. Training runs use CPU computation in float32.}
   \label{tab:experiments}
@@ -170,7 +171,7 @@ For the equal-time comparison, we estimate training-compute time by multiplying 
 
 This comparison retains learning rates selected for the 6000-step outcome rather than retuning them for the equal-time budget. It therefore compares the selected configurations under an estimated compute budget, rather than establishing each optimiser's best achievable performance at that budget. SGD has lower estimated risk than both Muon variants at $B\leq256$, whereas NS5 Muon has lower estimated risk at $B=1024$ (about 0.0058 versus 0.0079). These results depend on the tested CPU and benchmark conditions. The pilot's different ranking also illustrates the importance of tuning before comparing methods.
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{fig1_step_vs_time}
   \caption{Tuned baselines on the synthetic teacher--student task. (a) Tail excess risk, averaged over the final 10\% of 6000 training steps and two seeds, at each optimiser's selected learning rate. (b) Estimated excess risk at the training-compute budget corresponding to 6000 SGD steps, obtained by interpolating seed-averaged learning curves using separately benchmarked step times. Timing includes forward and backward passes and optimiser updates, but excludes data generation, evaluation, and setup. Learning rates are selected for the fixed-step outcome in both panels. Muon achieves lower tail risk per step at every batch size; under the estimated equal-time budget, only NS5 Muon outperforms SGD, and only at $B=1024$.}
@@ -194,7 +195,7 @@ The planned H1 contrast compares the absolute risk gap between $p=1$ and $p=-0.2
 
 H2 is not supported in the tested conditions: the Xie-style switch does not improve on continued exact Muon. For H3, the best tested exponent is $p=-0.25$ in every original E3 condition, leaving no variation in the selected exponent to correlate with the noise indicator. Estimated $\delta$ at the switch ranges from 0.69 to 4.09. These conditions do not reach the strongly noise-dominated regime $\delta\ll1$, so the results do not refute the proposed switch in that regime.
 
-\begin{figure}[t]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{fig2_e3_relative_change}
   \caption{E3 comparison (initially planned, with later tuning amendments). Change in tail excess risk when training continues from the same
@@ -203,7 +204,7 @@ H2 is not supported in the tested conditions: the Xie-style switch does not impr
   \label{fig:e3}
 \end{figure}
 
-\begin{table}[t]
+\begin{table}[!htbp]
   \centering
   \caption{Per condition: Xie's noise indicator $\delta$ at the switch; the best exponent among those
   tested (E3: initially planned with later tuning amendments; F1: exploratory, adds $p=-0.5$ and $p=-0.75$); and the change in tail
@@ -214,6 +215,7 @@ H2 is not supported in the tested conditions: the Xie-style switch does not impr
 \end{table}
 
 % =====================================================================================================
+\FloatBarrier
 \section{Exploratory follow-ups}\label{sec:exploratory}
 % Budget: 1.1 pages including Figure 3 (about 0.35 page): about 400 words.
 % Takeaway: the optimum shifts mildly with batch size, and the SGD-like arms lose for an identifiable
@@ -228,11 +230,7 @@ H2 is not supported in the tested conditions: the Xie-style switch does not impr
 %   delta (rho = +0.88).
 \textbf{These follow-ups were added after inspecting earlier results and are exploratory.} Since $-0.25$ was at the boundary of the original exponent grid, F1 added $p=-0.5$ and $-0.75$. Among the tested exponents, $-0.25$ has the lowest mean risk at $B\leq64$ and $-0.5$ at $B\geq256$, for both momenta (Figure~\ref{fig:f1}). The $-0.5$ versus $-0.25$ difference is modest: approximately 1.4--4.1\% worse at the smaller batches and 1.3--2.4\% better at the larger batches. Three paired evaluation seeds and an adaptively chosen follow-up limit certainty. A scale-free contrast points in H1's direction; it is a different, exploratory quantity and does not replace the planned absolute contrast.
 
-An early F1 selection was made before tuning extensions were complete. At the provisional multiplier $\times2$, $p=-0.5$ appeared up to 43\% worse than Muon in some conditions. Extending the tuning grid and selecting again changed the ranking. This demonstrates that conclusions about spectral shape can depend strongly on the learning-rate search. The scripts now include checks for unfinished tuning and stale selections.
-
-The exploratory frozen control investigates the very small learning rates selected for the SGD-like branches. It holds the two hidden weight matrices fixed while AdamW continues updating the remaining parameters, including all biases. At $B=16$ and $\beta=0.9$, the mean tail risks are approximately 0.0672 for $p=1$ and 0.0675 for the frozen control. Their similar means suggest limited additional improvement from updating these matrices under the selected settings and training budget; they do not establish statistical equivalence or show that the weights themselves remain unchanged. At $B=1024$ and $\beta=0.9$, the corresponding risks are approximately 0.0056 and 0.0076, indicating a larger benefit from the hidden-matrix updates. The control does not identify the mechanism responsible for this difference.
-
-\begin{figure}[t]
+\begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{fig3_f1_exponent_shift}
   \caption{Exploratory follow-up F1 (not pre-registered). (a,~b)~As Figure~\ref{fig:e3}, for $p \le 0$,
@@ -243,7 +241,14 @@ The exploratory frozen control investigates the very small learning rates select
   \label{fig:f1}
 \end{figure}
 
+An early F1 selection was made before tuning extensions were complete. At the provisional multiplier $\times2$, $p=-0.5$ appeared up to 43\% worse than Muon in some conditions. Extending the tuning grid and selecting again changed the ranking. This demonstrates that conclusions about spectral shape can depend strongly on the learning-rate search. The scripts now include checks for unfinished tuning and stale selections.
+
+The exploratory frozen control investigates the very small learning rates selected for the SGD-like branches. It holds the two hidden weight matrices fixed while AdamW continues updating the remaining parameters, including all biases. At $B=16$ and $\beta=0.9$, the mean tail risks are approximately 0.0672 for $p=1$ and 0.0675 for the frozen control. Their similar means suggest limited additional improvement from updating these matrices under the selected settings and training budget; they do not establish statistical equivalence or show that the weights themselves remain unchanged. At $B=1024$ and $\beta=0.9$, the corresponding risks are approximately 0.0056 and 0.0076, indicating a larger benefit from the hidden-matrix updates. The control does not identify the mechanism responsible for this difference.
+
+
+
 % =====================================================================================================
+\FloatBarrier
 \section{Discussion and limitations}\label{sec:discussion}
 % Budget: 0.9 page, about 500 words.
 % Takeaway: what this means for using Muon, and how far it generalises.
@@ -290,7 +295,9 @@ On this synthetic teacher--student task, tuned Muon configurations achieved lowe
 %   retries are counted in every run.
 % - Deviations from the protocol: one line per dated change-log entry.
 % - Reproduction: point to the README table; no commands here.
-Table~\ref{tab:multipliers} gives the selected branch multipliers. E3 extension rounds reduced edge cells from 37 to 7 to 3 to 0; F1 reduced them from 16 to 12 to 2 to 0. The control and F1 were exploratory; the tuning and timing amendments are dated in \texttt{notes/protocol.md}. Scripts, configurations, summaries and reproduction instructions are in the repository. Figure~\ref{fig:delta} shows the estimated indicator at the switch.
+This appendix provides supporting details for the experimental protocol and the interpretation of the measured noise regime. Table~\ref{tab:multipliers} records the selected learning-rate multipliers, while Figure~\ref{fig:delta} visualises the noise indicator measured at the branching point. These details support reproducibility and the scope of the conclusions; they do not establish that noise causes the observed exponent preferences.
+
+E3 extension rounds reduced edge cells from 37 to 7 to 3 to 0; F1 reduced them from 16 to 12 to 2 to 0. The control and F1 were exploratory; the tuning and timing amendments are dated in \texttt{notes/protocol.md}. Scripts, configurations, summaries and reproduction instructions are in the repository.
 
 \begin{table}[h]
   \centering
