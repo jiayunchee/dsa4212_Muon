@@ -114,13 +114,17 @@ The student has widths $128$--$256$--$256$--$256$--$16$, with tanh hidden activa
 
 We evaluate predictions on 16,384 fixed inputs using noiseless teacher outputs as targets. The mean squared prediction difference, averaged over inputs and output coordinates, estimates excess risk above the Bayes predictor. Using noiseless targets avoids having to estimate and subtract the label-noise floor. Our main outcome is tail excess risk: the average of evaluation measurements in the final 10\% of each training run or continuation branch.
 
-In E1, each optimiser and batch size starts with five learning rates; the SGD grid is extended at $B=1024$. E1 reports the same two seeds used to select rates, so selection can make those outcomes optimistic. For E3, exact Muon trains for 3000 steps before branching. Branches from the same condition and seed share the checkpoint and subsequent data stream, so their differences are paired. Each arm is tuned on seeds 0 and 1 and evaluated on seeds 2--4. Tuning begins at multipliers $\{0.5,1,2\}$ and extends the grid if the selected value is on an edge, so trial counts differ across cells. Table~\ref{tab:multipliers} gives selected multipliers. Paired $t$-intervals over three evaluation seeds are fragile.
+In E1, each optimiser is trained for 6000 steps at each batch size, starting with a grid of five learning rates. The SGD grid is extended at $B=1024$. Rates are selected using mean tail excess risk over seeds 0 and 1, and the reported E1 outcomes use those same seeds. These results therefore describe performance after tuning on the reported seeds, rather than an independent evaluation of the selected settings.
+
+For the branch experiments, E2 trains exact Muon for 3000 steps at each combination of batch size $B\in\{16,64,256,1024\}$ and momentum $\beta\in\{0.9,0.95\}$. Each E3 or F1 branch then continues for a further 3000 steps. Within each condition and seed, branches share the starting model, optimiser state, and subsequent training-data stream. The hidden-matrix update rule and learning rate may change at the switch, while the AdamW state and learning rate for the remaining parameters are preserved. Learning rates remain constant within each phase.
+
+Each branch arm is tuned on seeds 0 and 1 and evaluated on seeds 2, 3 and 4. Tuning starts with learning-rate multipliers $\{0.5,1,2\}$ and extends the grid when the best value lies at an edge, subject to the documented bounds. Consequently, tuning trial counts differ across arms and conditions. Selected multipliers are reported in Table~\ref{tab:multipliers}. We compare branches using paired differences over the three evaluation seeds; the resulting $t$-intervals should be interpreted cautiously because the sample is small.
 
 The E3 question, initial arms and comparisons were specified in the protocol; the tuning extension procedure and bounded stopping rule were subsequently documented during tuning. The frozen control and F1 were added after inspection and are exploratory. The timing procedure was changed to five-pass medians after a noisy single pass. The dated change log records these decisions. The per-layer indicator $\delta=\|\widehat{E G}\|_F/(\widehat\sigma_N\sqrt{mn})$ uses 32 fresh minibatch gradients, bias correction of the squared mean-gradient norm, and a momentum-noise calculation assuming stationarity and independent gradient noise. We average the estimate across both hidden matrices and seeds.
 
 \begin{table}[t]
   \centering
-  \caption{The experiments. Tuning and evaluation use separate seeds; all runs are on one CPU in float32.}
+  \caption{Experiment overview. E3 and F1 use separate tuning and evaluation seeds; E1 reports results on its tuning seeds. Training runs use CPU computation in float32.}
   \label{tab:experiments}
   \small
   \begin{tabular}{@{}lp{6.4cm}rll@{}}
