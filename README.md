@@ -58,10 +58,11 @@ Run every command from the repository root.
 
 **Notes on running.**
 
-- Sweeps can be resumed: a run whose result file exists is skipped.
+- Sweeps can be resumed. A run is skipped only when its result JSON and every checkpoint requested by its configuration exist. If a required checkpoint is missing, the run is repeated to regenerate it, and its result JSON is rewritten.
 - The branch steps can also be run one at a time: `run.py <config>`, then `analyze_branches.py extend | select | evaluate [--followup]`. `select` and `evaluate` refuse while a tuning run is unfinished, a best multiplier sits on an edge that can still be extended, or the evaluation config predates the latest tuning runs (protocol Section 6). `extend` says which config to run next.
 - Each run writes a JSON record to `results/<experiment>/`. It holds the config, seed, git commit, package versions, the full evaluation history and a summary.
-- Checkpoints go to `checkpoints/`. They are not committed; rerun E2 to regenerate them.
+- Checkpoints go to `checkpoints/` and are not committed. On a fresh checkout, regenerate the E2 checkpoints with `python code/run.py configs/e2_shared.yaml --workers 4`. The runner detects the missing checkpoints even when E2 result JSON files already exist. This repeats the E2 training and rewrites the corresponding E2 result files.
+- Regenerating E2 checkpoints does not automatically rerun completed E3 or F1 branches. To reproduce all training from scratch, use a separate checkout, move its existing `results/` directory outside that checkout to preserve the supplied results, and follow the experiment workflow. Analyse the newly generated results separately from the supplied results.
 
 ## Layout
 
@@ -94,4 +95,3 @@ Run every command from the repository root.
 | Exploratory F1 | `results/e3_branches/evaluation_summary_followup.json` | `code/analyze_branches.py`, `code/plot_report.py` |
 | Tables and multipliers | branch summaries, `configs/e3b_branches_eval.yaml`, `configs/f1b_branches_eval.yaml` | `code/make_tables.py` |
 
-The report is a draft: the group must verify cited readings, numerical claims and author information before submission. Existing result files are skipped by sweeps; regenerate checkpoints from E2 as described above before running branches in a fresh checkout.
