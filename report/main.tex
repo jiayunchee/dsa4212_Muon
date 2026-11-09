@@ -53,6 +53,16 @@ Muon transforms the momentum updates of matrix-valued hidden weights. Its practi
 
 We investigate whether modifying Muon's spectral update improves late-stage optimisation on a synthetic teacher--student regression task. We first compare Muon with SGD and AdamW under fixed training-step budgets and estimated computation-time budgets. We then compare separately tuned spectral exponents from shared checkpoints across batch sizes and momentum settings. A gradient-noise indicator measured at the switch helps us explore whether the observed differences are associated with noise, although this design does not isolate noise as their cause. Exploratory controls and additional exponents investigate the sensitivity of the results to step-size selection.
 
+The initial experiment protocol specified three hypotheses:
+\begin{enumerate}
+    \item \textbf{H1: Preferred exponent.} Higher gradient noise favours larger late-phase spectral exponents. We therefore expected larger exponents to perform better at smaller batch sizes or lower momentum, and non-positive exponents to be preferred at larger batch sizes or higher momentum.
+
+    \item \textbf{H2: Switching to momentum SGD.} Switching from Muon to an unnormalised momentum update, using Xie's matched learning-rate scale, reduces late-stage excess risk. We expected a larger benefit at smaller batch sizes and lower momentum.
+
+    \item \textbf{H3: Noise indicator.} The signal-to-noise indicator $\delta$ measured at the switch predicts the preferred exponent: smaller $\delta$, indicating more noise relative to signal, favours larger exponents.
+\end{enumerate}
+These hypotheses motivated the original branch experiment. The additional negative exponents and frozen-hidden-layer control were introduced after inspecting earlier results and are treated as exploratory.
+
 % =====================================================================================================
 \section{Background}\label{sec:background}
 % Budget: 0.8 page, about 440 words.
