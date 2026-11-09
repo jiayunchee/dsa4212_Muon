@@ -2,12 +2,12 @@
 
 **Repository:** https://github.com/jiayunchee/dsa4212_Muon
 
-**Status, 28 Oct 2026:**
+**Project status:**
 
 - The experiment protocol is fixed in `notes/protocol.md`; later changes are in its change log.
 - E1–E4 and the per-second timing are run.
 - Follow-up F1 (p = −0.5 and −0.75, not pre-registered) is complete.
-- A report draft is present in `report/main.tex`; author details and source review remain necessary before submission.
+- The report source is in `report/main.tex`, with bibliography, figures and tables in `report/`.
 
 Authors are listed in `authors.md`.
 
