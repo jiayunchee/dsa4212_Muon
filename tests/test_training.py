@@ -63,4 +63,46 @@ def test_sweep_expansion_resolves_dependencies_and_placeholders():
     big = next(c for c in configs if c["batch_size"] == 1024 and c["seed"] == 1)
     assert big["optimizer"]["adam_lr"] == 3e-3
     assert big["branch"]["checkpoint"] == "checkpoints/e2/B1024_s1.pt"
-    assert big["name"].startswith("muon_lr")
+    assert big["name"].startswith("muon_lr") 
+
+
+def test_sweep_regenerates_missing_checkpoint_and_skips_complete_run(
+    tmp_path, monkeypatch
+):
+    from concurrent.futures import ThreadPoolExecutor
+    import muonlab.sweep as sweep
+    import muonlab.train as train
+
+    monkeypatch.setattr(sweep, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(train, "REPO_ROOT", tmp_path)
+    monkeypatch.setattr(sweep, "ProcessPoolExecutor", ThreadPoolExecutor)
+
+    cfg = tiny_config(steps=10, checkpoint_at=[10])
+    checkpoint = tmp_path / "checkpoints" / EXPERIMENT / "shared_step10.pt"
+
+    # A new run should create its result and checkpoint.
+    assert not sweep.run_is_complete(cfg)
+    first = sweep.execute([cfg], workers=1)
+    assert len(first) == 1
+    assert sweep.run_is_complete(cfg)
+
+    # A complete run should be skipped.
+    assert sweep.execute([cfg], workers=1) == []
+
+    # Remove only the checkpoint, leaving the result file.
+    checkpoint.unlink()
+    assert not sweep.run_is_complete(cfg)
+    assert sweep.run_is_complete({**cfg, "checkpoint_at": []})
+
+    # The runner should regenerate the missing checkpoint.
+    recovered = sweep.execute([cfg], workers=1)
+    assert len(recovered) == 1
+    assert (
+        recovered[0]["tail_mean_excess_risk"]
+        == first[0]["tail_mean_excess_risk"]
+    )
+    assert checkpoint.is_file()
+    assert sweep.run_is_complete(cfg)
+
+    # Once recovered, the run should be skipped again.
+    assert sweep.execute([cfg], workers=1) == []
