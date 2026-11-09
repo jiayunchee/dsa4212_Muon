@@ -4,8 +4,8 @@
 
 **Project status:**
 
-- The experiment protocol is fixed in `notes/protocol.md`; later changes are in its change log.
-- E1–E4 and the per-second timing are run.
+- The initial experiment protocol and subsequent amendments are documented in `notes/protocol.md` and its dated change log.
+- E1–E4 and the estimated compute-time comparison are complete.
 - Follow-up F1 (p = −0.5 and −0.75, not pre-registered) is complete.
 - The report source is in `report/main.tex`, with bibliography, figures and tables in `report/`.
 
@@ -16,10 +16,10 @@ Authors are listed in `authors.md`.
 Late in training, should Muon flatten its update more or less, and does the answer depend on gradient noise?
 
 - **The family.** Muon replaces each hidden-layer update matrix N = U S Vᵀ by U Vᵀ. We study U S^p Vᵀ:
-  - p = 0 is Muon;
-  - p = 1 is (normalised) momentum SGD;
+  - p = 0 is exact Muon;
+  - p = 1 is a normalised momentum-like update, distinct from the standalone SGD baseline;
   - p < 0 boosts weak directions even more than Muon does.
-- **Why it's open.** Two 2026 papers make opposite predictions for late training (Xie, arXiv:2609.32861; Wu et al., arXiv:2605.17109). We test whether the best p depends on the noise level. The noise is controlled through the batch size on a synthetic teacher–student task with a known optimum.
+- **Why it's open.** Xie (arXiv:2609.32861) motivates response-matched momentum updates in a noise-dominated regime, while Wu et al. (arXiv:2605.17109) motivate mildly negative spectral powers late in training. These arguments concern different settings. On a synthetic teacher–student task with a known clean prediction target, we compare tuned update rules across batch sizes and momentum settings and measure a gradient-noise indicator. These comparisons can reveal associations with noise, but do not isolate noise as the cause: batch size also changes the number of examples processed, and the conditions reach different checkpoints.
 - **More detail.** Background is in `notes/novelty_check_2026-10-19.md`; the full design is in `notes/protocol.md`.
 
 ## Environment
@@ -50,11 +50,11 @@ Run every command from the repository root.
 | E3 branches: tuning, extensions, selection, evaluation, figures | `python code/run_branches.py`. It runs `e3a`, the extensions `e3a_ext1`–`e3a_ext3` (148, 28 and 6 runs), `select`, `e3b`, `evaluate` and `plot_e3.py`, in that order | ~1 h 45 min |
 | F1 follow-up (not pre-registered; needs E3) | `python code/run_branches.py --followup`. The same steps with `f1a`, `f1a_ext1`–`f1a_ext3` (64, 48 and 4 runs) and `f1b` | ~1 h 10 min |
 | E3, E4 and F1 figures only | `python code/plot_e3.py` | seconds |
+| Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` (5 passes; the median per cell is kept) | ~5 min |
+| Per-second comparison | `python code/analyze_time.py` (needs E1 and the timing benchmark) | seconds |
 | Report Figures 1–3 (need E1, the timing step, E3 and F1) | `python code/plot_report.py` | seconds |
 | Report Tables 2 and A1 | `python code/make_tables.py` | seconds |
 | Report PDF | Compile `report/main.tex` with pdflatex and bibtex, or on Overleaf | — |
-| Timing benchmark (quiet machine) | `python code/benchmark_step_time.py` (5 passes; the median per cell is kept) | ~5 min |
-| Per-second comparison | `python code/analyze_time.py` (needs E1 and the timing benchmark) | seconds |
 
 **Notes on running.**
 
@@ -80,10 +80,10 @@ Run every command from the repository root.
 
 ## Known limitations
 
-- **Small networks on a synthetic task:** results speak to mechanisms, not to large-model training.
+- **Small networks on one synthetic task:** results describe behaviour in the tested setting; they do not establish a causal noise mechanism or generalise directly to large-model training.
 - **float32 throughout,** whereas the reference implementations use bfloat16. bfloat16 is 200–400× slower on this CPU; see the lab notebook (15 Oct).
 - **Exact-SVD Muon is not Newton–Schulz Muon;** both are reported.
-- **Few seeds:** 2 seeds for tuning, 3 for evaluation.
+- **Few seeds:** E1 selects and reports settings on the same 2 seeds. E3/F1 tune on seeds 0 and 1 and evaluate on seeds 2, 3 and 4. F1 was designed after inspecting earlier results and remains exploratory.
 - **Step timings depend on machine load:** the sub-millisecond steps varied by up to 2× between benchmark passes. Per-second results therefore use the median of 5 passes, and their conclusions are checked against single passes (lab notebook, 28 Oct).
 
 ## Report claim traceability
