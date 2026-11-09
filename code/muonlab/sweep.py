@@ -106,9 +106,20 @@ def result_path(cfg: dict) -> Path:
     return REPO_ROOT / "results" / cfg["experiment"] / f"{cfg['name']}.json"
 
 
+def run_is_complete(cfg: dict) -> bool:
+    """A run is complete only when its result and requested checkpoints exist."""
+    if not result_path(cfg).is_file():
+        return False
+    checkpoint_dir = REPO_ROOT / "checkpoints" / cfg["experiment"]
+    return all(
+        (checkpoint_dir / f"{cfg['name']}_step{step}.pt").is_file()
+        for step in cfg.get("checkpoint_at", [])
+    )
+
+
 def execute(configs: list[dict], workers: int = 1) -> list[dict]:
-    """Run every config whose result file is missing; print one line per finished run."""
-    todo = [c for c in configs if not result_path(c).exists()]
+    """Run configs with missing results or requested checkpoints."""
+    todo = [c for c in configs if not run_is_complete(c)]
     print(f"{len(configs)} runs, {len(configs) - len(todo)} already done, {len(todo)} to run, {workers} workers")
     summaries, start = [], time.perf_counter()
     with ProcessPoolExecutor(max_workers=workers) as pool:
