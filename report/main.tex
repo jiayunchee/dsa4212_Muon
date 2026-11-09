@@ -162,17 +162,14 @@ The E3 question, initial arms and comparisons were specified in the protocol; th
 % - Caution: the timings are CPU-specific and vary with machine load.
 At 6000 steps, exact Muon has approximately 37.5, 25.2, 29.1 and 45.1\% lower tail excess risk than the better baseline, SGD, at $B=16,64,256,1024$, respectively; NS5 is close to exact Muon (Figure~\ref{fig:baselines}). These are two-seed E1 results selected and evaluated on the same seeds. Tail risk averages measurements in the final 10\% of training.
 
-The equal-time comparison retains rates selected for 6000 steps rather than tuning separately for the time budget. It reads averaged E1 curves at the time SGD needs for 6000 steps, using median per-step times from five benchmark passes. On the tested CPU, SGD has lower estimated risk for $B\leq256$, whereas NS5 is lower at $B=1024$ (about 0.0058 versus 0.0079). Timing is hardware- and load-dependent. The pilot's different ranking also illustrates the importance of tuning before comparing methods.
+For the equal-time comparison, we estimate training-compute time by multiplying the number of steps by a separately benchmarked time per step. The benchmark measures the forward pass, backward pass, and optimiser update on one CPU thread; it excludes data generation, evaluation, and setup. We use the median step time across five benchmark passes and interpolate the seed-averaged E1 learning curves at the compute budget corresponding to 6000 SGD steps.
+
+This comparison retains learning rates selected for the 6000-step outcome rather than retuning them for the equal-time budget. It therefore compares the selected configurations under an estimated compute budget, rather than establishing each optimiser's best achievable performance at that budget. SGD has lower estimated risk than both Muon variants at $B\leq256$, whereas NS5 Muon has lower estimated risk at $B=1024$ (about 0.0058 versus 0.0079). These results depend on the tested CPU and benchmark conditions. The pilot's different ranking also illustrates the importance of tuning before comparing methods.
 
 \begin{figure}[t]
   \centering
   \includegraphics[width=\linewidth]{fig1_step_vs_time}
-  \caption{Tuned baselines on Task~A, per step and per second. (a)~Tail excess risk (mean over the last
-  10\% of 6000 steps, mean of 2 seeds) at each optimiser's best learning rate. (b)~Excess risk at equal
-  wall-clock time: the seed-averaged curve read at the time SGD needs for 6000 steps, with the median
-  time per step over 5 benchmark passes (one CPU thread). The shared log axis shows the cost of Muon's
-  slower steps: per step, both Muons lead at every batch size; per second, only NS5 Muon beats SGD, and
-  only at $B=1024$.}
+  \caption{Tuned baselines on the synthetic teacher--student task. (a) Tail excess risk, averaged over the final 10\% of 6000 training steps and two seeds, at each optimiser's selected learning rate. (b) Estimated excess risk at the training-compute budget corresponding to 6000 SGD steps, obtained by interpolating seed-averaged learning curves using separately benchmarked step times. Timing includes forward and backward passes and optimiser updates, but excludes data generation, evaluation, and setup. Learning rates are selected for the fixed-step outcome in both panels. Muon achieves lower tail risk per step at every batch size; under the estimated equal-time budget, only NS5 Muon outperforms SGD, and only at $B=1024$.}
   \label{fig:baselines}
 \end{figure}
 
