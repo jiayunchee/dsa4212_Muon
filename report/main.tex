@@ -31,6 +31,7 @@
   Tasha Lim Shi Ying (A0264170L)\\[6pt]
   \normalsize Code, configs and results:\\
   \normalsize \url{https://github.com/jiayunchee/dsa4212_Muon}}
+\date{}  % no date under the title; put the submission date here if one is wanted
 
 
 \begin{document}
@@ -125,7 +126,7 @@ For the branch experiments, E2 trains exact Muon for 3000 steps at each combinat
 
 Each branch arm is tuned on seeds 0 and 1 and evaluated on seeds 2, 3 and 4. Tuning starts with learning-rate multipliers $\{0.5,1,2\}$ and extends the grid when the best value lies at an edge, subject to the documented bounds. Consequently, tuning trial counts differ across arms and conditions. Selected multipliers are reported in Table~\ref{tab:multipliers}. We compare branches using paired differences over the three evaluation seeds; the resulting $t$-intervals should be interpreted cautiously because the sample is small.
 
-The E3 question, initial arms and comparisons were specified in the protocol; the tuning extension procedure and bounded stopping rule were subsequently documented during tuning. The frozen control and F1 were added after inspection and are exploratory. The timing procedure was changed to five-pass medians after a noisy single pass. The dated change log records these decisions. The per-layer indicator $\delta=\|\widehat{E G}\|_F/(\widehat\sigma_N\sqrt{mn})$ uses 32 fresh minibatch gradients, bias correction of the squared mean-gradient norm, and a momentum-noise calculation assuming stationarity and independent gradient noise. We average the estimate across both hidden matrices and seeds.
+The E3 question, initial arms and comparisons, and the requirement to extend any tuning grid whose best value lies at an edge, were specified in the protocol before the E3 runs; the exact extension procedure and the bounded stopping rule were fixed during tuning. The frozen control and F1 were added after inspection and are exploratory. The timing procedure was changed to five-pass medians after a noisy single pass. The dated change log records these decisions, and Table~\ref{tab:experiments} summarises all experiments, their run counts and their status. The per-layer indicator $\delta=\|\widehat{E G}\|_F/(\widehat\sigma_N\sqrt{mn})$ uses 32 fresh minibatch gradients, bias correction of the squared mean-gradient norm, and a momentum-noise calculation assuming stationarity and independent gradient noise. We average the estimate across both hidden matrices and seeds.
 
 \begin{table}[!htbp]
   \centering
@@ -191,7 +192,7 @@ This comparison retains learning rates selected for the 6000-step outcome rather
 % - Disclose the design flaw: C compares absolute gaps, and excess risk is about 14x larger at B = 16.
 Table~\ref{tab:conditions} and Figure~\ref{fig:e3} show the paired evaluation. Relative to continuing exact Muon, $p=-0.25$ improves tail risk by approximately 2.4--7.6\% across conditions, while $p=1$ and the Xie-style switch increase it by about 12--41\% and 12--37\%, respectively. NS5 remains close to exact Muon. The best tested exponent in the original E3 grid is $-0.25$ in all eight conditions.
 
-The planned H1 contrast compares the absolute risk gap between $p=1$ and $p=-0.25$ at $B=16$ with the corresponding gap at $B=1024$. H1 predicts a negative contrast. Instead, the analysis gives $C=0.00877$ [0.00833, 0.00922] for $\beta=0.9$ and $0.00657$ [0.00617, 0.00698] for $\beta=0.95$ (Welch 95\% intervals; differences between arms within each batch size are paired over seeds). Thus, the observed contrast is opposite to the planned prediction. However, this contrast measures absolute gaps between conditions with substantially different risk levels. Its sign does not by itself establish how noise changes the relative advantage of one exponent over another. The broader noise-dependence hypothesis therefore remains unresolved.
+The planned H1 contrast compares the absolute risk gap between $p=1$ and $p=-0.25$ at $B=16$ with the corresponding gap at $B=1024$. H1 predicts a negative contrast. Instead, the analysis gives $C=0.00877$ [0.00833, 0.00922] for $\beta=0.9$ and $0.00657$ [0.00617, 0.00698] for $\beta=0.95$ (Welch 95\% intervals; differences between arms within each batch size are paired over seeds). By the pre-specified criterion, H1 is therefore contradicted: both intervals lie above zero, and at $B=16$ the SGD-like exponent $p=1$ is 12--16\% worse than continuing Muon rather than better. However, this contrast measures absolute gaps between conditions with substantially different risk levels, so its sign does not by itself establish how noise changes the relative advantage of one exponent over another. Whether the preferred exponent depends on noise more broadly remains open (Section~\ref{sec:exploratory}).
 
 H2 is not supported in the tested conditions: the Xie-style switch does not improve on continued exact Muon. For H3, the best tested exponent is $p=-0.25$ in every original E3 condition, leaving no variation in the selected exponent to correlate with the noise indicator. Estimated $\delta$ at the switch ranges from 0.69 to 4.09. These conditions do not reach the strongly noise-dominated regime $\delta\ll1$, so the results do not refute the proposed switch in that regime.
 
@@ -200,7 +201,7 @@ H2 is not supported in the tested conditions: the Xie-style switch does not impr
   \includegraphics[width=\linewidth]{fig2_e3_relative_change}
   \caption{E3 comparison (initially planned, with later tuning amendments). Change in tail excess risk when training continues from the same
   Muon checkpoint with spectral exponent $p$ instead of Muon ($p=0$), each arm at its own tuned step
-  size. Mean and 95\% $t$-interval over 3 evaluation seeds; below 0 is better than continuing Muon. The $p=-0.25$ arm is best among the original spectral exponents in every condition; the SGD-like arms generally have the largest increases.}
+  size. Mean and 95\% $t$-interval over 3 evaluation seeds; below 0 is better than continuing Muon. The $p=-0.25$ arm is best among the original spectral exponents in every condition; the SGD-like end ($p=1$) has the largest increase in every condition.}
   \label{fig:e3}
 \end{figure}
 
@@ -228,12 +229,12 @@ H2 is not supported in the tested conditions: the Xie-style switch does not impr
 %   0.0672 vs 0.0675 at beta = 0.9); at B = 1024 they clearly beat it (0.0056 vs 0.0076).
 % - Scale-free contrast: -0.199 and -0.163 (H1's direction); the gain of p = -0.25 over Muon rises with
 %   delta (rho = +0.88).
-\textbf{These follow-ups were added after inspecting earlier results and are exploratory.} Since $-0.25$ was at the boundary of the original exponent grid, F1 added $p=-0.5$ and $-0.75$. Among the tested exponents, $-0.25$ has the lowest mean risk at $B\leq64$ and $-0.5$ at $B\geq256$, for both momenta (Figure~\ref{fig:f1}). The $-0.5$ versus $-0.25$ difference is modest: approximately 1.4--4.1\% worse at the smaller batches and 1.3--2.4\% better at the larger batches. Three paired evaluation seeds and an adaptively chosen follow-up limit certainty. A scale-free contrast points in H1's direction; it is a different, exploratory quantity and does not replace the planned absolute contrast.
+\textbf{These follow-ups were added after inspecting earlier results and are exploratory.} Since $-0.25$ was at the boundary of the original exponent grid, F1 added $p=-0.5$ and $-0.75$. Among the tested exponents, $-0.25$ has the lowest mean risk at $B\leq64$ and $-0.5$ at $B\geq256$, for both momenta (Figure~\ref{fig:f1}). The $-0.5$ versus $-0.25$ difference is modest: approximately 1.4--4.1\% worse at the smaller batches and 1.3--2.4\% better at the larger batches. Three paired evaluation seeds and an adaptively chosen follow-up limit certainty. A scale-free version of the H1 contrast, comparing $\log(L_{p=1}/L_{p=-0.25})$ at $B=16$ with the same quantity at $B=1024$, where $L$ is the mean tail excess risk, is $-0.20$ for $\beta=0.9$ and $-0.16$ for $\beta=0.95$: in H1's direction. It was defined after the results were seen, is exploratory, and does not replace the planned absolute contrast.
 
 \begin{figure}[!htbp]
   \centering
   \includegraphics[width=\linewidth]{fig3_f1_exponent_shift}
-  \caption{Exploratory follow-up F1 (not pre-registered). (a,~b)~As Figure~\ref{fig:e3}, for $p \le 0$,
+  \caption{Exploratory follow-up F1 (added after the E3 results). (a,~b)~As Figure~\ref{fig:e3}, for $p \le 0$,
   including the added arms $p=-0.5$ and $p=-0.75$; each batch size's best $p$ is drawn larger.
   (c)~Paired difference between $p=-0.5$ and $p=-0.25$, in \% of the excess risk at $p=-0.25$; mean and
   95\% $t$-interval over 3 seeds. Below 0, flattening more is better; the sign flips between $B=64$
