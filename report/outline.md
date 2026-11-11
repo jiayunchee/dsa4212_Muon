@@ -74,7 +74,7 @@ Each section starts with what the reader should come away believing.
 - **The Muon update:** EMA momentum, the Nesterov input, Newton–Schulz approximating the polar factor UVᵀ, and the shape factor √max(1, m/n). One displayed equation.
 - **The family** D_p = U S^p Vᵀ, rescaled to ‖D_p‖_F = √rank: p = 0 is Muon, p = 1 is normalised momentum SGD, and p < 0 boosts weak directions further.
 - **The two predictions:** Xie's indicator δ (signal over noise, per layer) with the matched switch to SGD; DynMuon's late-training p = −0.25.
-- **Why step sizes must be tuned for each p** (Shumaylov et al.; read before citing, see References).
+- **Why step sizes must be tuned for each p** (Shumaylov et al., Section 2.4.1).
 
 ### 3. Setup and protocol (1.5)
 

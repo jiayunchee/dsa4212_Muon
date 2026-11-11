@@ -22,9 +22,10 @@
 \usepackage{xcolor}
 \usepackage[hidelinks]{hyperref}
 \graphicspath{{figures/}}
-\makeatletter  % pages holding only floats (here just the last page, Figure 4) start at the top, not centred
+\makeatletter  % pages holding only floats start at the top, not centred, with normal gaps between floats
 \setlength{\@fptop}{0pt}
 \setlength{\@fpbot}{0pt plus 1fil}
+\setlength{\@fpsep}{\floatsep}
 \makeatother
 \newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}  % none may remain at submission
 
@@ -88,7 +89,7 @@ These hypotheses motivated the original branch experiment. The additional negati
 %   factor sqrt(max(1, m/n)). Equation (1) below gives the family studied.
 % - p = 0 is exact Muon, p = 1 normalised momentum SGD, p < 0 boosts weak directions further.
 % - Xie's indicator delta (signal over noise, per layer) and the matched switch; DynMuon's late p = -0.25.
-% - Why step sizes must be tuned per p: Shumaylov et al. (2026). READ BEFORE CITING (abstract only).
+% - Why step sizes must be tuned per p: Shumaylov et al. (2026), Section 2.4.1.
 For a hidden weight matrix $W \in \mathbb{R}^{m \times n}$ with Nesterov momentum input
 $N = U S V^\top$ (thin SVD, numerical rank $r$), we study the update family
 \begin{equation}
@@ -214,7 +215,7 @@ H2 is not supported in the tested conditions: the Xie-style switch does not impr
   \includegraphics[width=\linewidth]{fig2_e3_relative_change}
   \caption{E3 comparison (initially planned, with later tuning amendments). Change in tail excess risk when training continues from the same
   Muon checkpoint with spectral exponent $p$ instead of Muon ($p=0$), each arm at its own tuned step
-  size. Mean and 95\% $t$-interval over 3 evaluation seeds; below 0 is better than continuing Muon. The $p=-0.25$ arm is best among the original spectral exponents in every condition; the SGD-like end ($p=1$) has the largest increase in every condition.}
+  size. Percentage change computed within each seed; mean and 95\% $t$-interval over 3 evaluation seeds; below 0 is better than continuing Muon. The $p=-0.25$ arm is best among the original spectral exponents in every condition; the SGD-like end ($p=1$) has the largest increase in every condition.}
   \label{fig:e3}
 \end{figure}
 
@@ -248,7 +249,7 @@ H2 is not supported in the tested conditions: the Xie-style switch does not impr
   \includegraphics[width=\linewidth]{fig3_f1_exponent_shift}
   \caption{Exploratory follow-up F1 (added after the E3 results). (a,~b)~As Figure~\ref{fig:e3}, for $p \le 0$,
   including the added arms $p=-0.5$ and $p=-0.75$; each batch size's best $p$ is drawn larger.
-  (c)~Paired difference between $p=-0.5$ and $p=-0.25$, in \% of the excess risk at $p=-0.25$; mean and
+  (c)~Paired difference between $p=-0.5$ and $p=-0.25$, in \% of the mean excess risk at $p=-0.25$; mean and
   95\% $t$-interval over 3 seeds. Below 0, flattening more is better; the sign flips between $B=64$
   and $B=256$.}
   \label{fig:f1}
@@ -276,7 +277,7 @@ The exploratory frozen control investigates the very small learning rates select
 %   seeds; p grid in steps of 0.25; equal steps across B (larger batches see more data); timing is
 %   hardware- and load-dependent; F1 not pre-registered. Without E5, H2 is "not supported in our noise
 %   regime", not "refuted".
-Our experiments support a task-specific benefit from giving greater relative weight to weak singular directions during late-stage training. The $p=-0.25$ branch improves on continued exact Muon across all eight original conditions, while the exploratory extension favours $p=-0.5$ at the larger batch sizes. At the switch, the momentum buffer of each hidden matrix has numerical rank 249--256 out of 256 but an average entropy-based effective rank (the exponential of the entropy of the normalised singular values) of only 33--54 across conditions, so most retained singular directions are weak, and a negative exponent shifts more of the update onto them. These findings are consistent with the qualitative late-stage motivation of \citet{wu2026dynmuon}, but they do not evaluate the complete DynMuon schedule or establish that negative exponents are preferable on other tasks.
+Our experiments support a task-specific benefit from giving greater relative weight to weak singular directions during late-stage training. The $p=-0.25$ branch improves on continued exact Muon across all eight original conditions, while the exploratory extension favours $p=-0.5$ at the larger batch sizes. At the switch, the momentum buffer of each hidden matrix has numerical rank 249--256 out of 256 but an average entropy-based effective rank (the exponential of the entropy of the normalised singular values) of only 33--54 across conditions, so most retained singular directions are weak, and a negative exponent shifts more of the update onto them. These findings are consistent with the qualitative late-stage motivation of \citet{wu2026dynmuon}, but they do not evaluate the complete DynMuon schedule or establish that negative exponents are preferable on other tasks. For GPT-2, \citet{shumaylov2026special} likewise find the best settings of their update $(GG^\top)^{-c}G$, whose singular-value power $1-2c$ is our $p$, at $c>1/2$, that is, at negative powers.
 
 The role of gradient noise remains unresolved. Batch size changes both gradient noise and the number of examples processed at a fixed step budget. Different batch sizes and momentum settings also produce different checkpoints and training trajectories. Consequently, the eight conditions do not isolate a causal effect of noise on the preferred exponent.
 
@@ -324,7 +325,7 @@ E3 extension rounds reduced edge cells from 37 to 7 to 3 to 0; F1 reduced them f
   \centering
   \includegraphics[width=0.55\linewidth]{e4_delta_vs_batch}
   \caption{Xie's noise indicator $\delta$ at the switch (step 3000), mean over both hidden matrices and
-  5 seeds. Below 1, noise dominates the momentum.}
+  5 seeds. Below 1, the estimated noise in the momentum exceeds the estimated signal, under the assumptions stated in Section~\ref{sec:setup}.}
   \label{fig:delta}
 \end{figure}
 

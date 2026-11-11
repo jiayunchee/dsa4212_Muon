@@ -8,7 +8,7 @@ On 15 Oct 2026 every arXiv entry below was checked through the arXiv API: the ID
 - *scanned*: full text searched for specific content (e.g. batch-size and momentum experiments), not read end to end;
 - *abstract*: abstract only.
 
-Read statuses were last updated on 19 Oct 2026 (novelty check, see `novelty_check_2026-10-19.md`).
+Read statuses were last updated on 11 Nov 2026, for Bernstein & Newhouse, Liu et al., NorMuon, Dion and Shumaylov et al.; before that on 19 Oct 2026 (novelty check, see `novelty_check_2026-10-19.md`).
 
 Do not cite a claim from a source we have only read the abstract of until someone reads the relevant section.
 
@@ -17,10 +17,10 @@ Do not cite a claim from a source we have only read the abstract of until someon
 | Source | Read | Why it matters |
 |---|---|---|
 | Jordan et al. (2024), *Muon: An optimizer for hidden layers in neural networks*, https://kellerjordan.github.io/posts/muon/ | full | Definition, Newton–Schulz design, FLOP overhead T·m/B, which parameters get Muon |
-| Bernstein & Newhouse (2024), *Old Optimizer, New Norm: An Anthology*, arXiv:2409.20325 | abstract | Adam, Shampoo and Muon as steepest descent under different norms |
-| Liu et al. (2025), *Muon is Scalable for LLM Training*, arXiv:2502.16982 | abstract | Weight decay, update-RMS matching (0.2·√max(A,B)), about 2× compute efficiency |
-| Li et al. (2025), *NorMuon: Making Muon more efficient and scalable*, arXiv:2510.05491 | abstract | Per-neuron normalisation after orthogonalisation |
-| Ahn et al. (2025), *Dion: Distributed Orthonormalized Updates*, arXiv:2504.05295 | abstract | Low-rank power iteration with error feedback |
+| Bernstein & Newhouse (2024), *Old Optimizer, New Norm: An Anthology*, arXiv:2409.20325 | Stories I–II, Table 1 | Adam, Shampoo and Muon as steepest descent under different norms |
+| Liu et al. (2025), *Muon is Scalable for LLM Training*, arXiv:2502.16982 | §1–3.3 | Weight decay, update-RMS matching (0.2·√max(A,B)), about 2× compute efficiency |
+| Li et al. (2025), *NorMuon: Making Muon more efficient and scalable*, arXiv:2510.05491 | §1, §3, §4.1 | Per-neuron normalisation after orthogonalisation |
+| Ahn et al. (2025), *Dion: Distributed Orthonormalized Updates*, arXiv:2504.05295 | §1–3.5 | Low-rank power iteration with error feedback |
 
 ## B. Implementations
 
@@ -123,7 +123,7 @@ Do not cite a claim from a source we have only read the abstract of until someon
 |---|---|---|
 | Dang, Wen & Malladi (2026), *The Best Optimizer Depends on Batch Size*, arXiv:2610.08975 | abstract, §1, scaling-rule table | Optimizer rankings (incl. Muon) cross with batch size after per-batch tuning; no Muon scaling rule works everywhere |
 | Wu, Shah, Silwal & Zhang (2026), *DynMuon: A Dynamic Spectral Shaping View of Muon*, arXiv:2605.17109 | §2–4 | Late training prefers mildly negative p (−0.25); tested at one large batch only |
-| Shumaylov et al. (2026), *Muon is Not That Special: Random or Inverted Spectra Work Just as Well*, arXiv:2605.11181 | abstract | Exact spectral shape matters little; step-size optimality does |
+| Shumaylov et al. (2026), *Muon is Not That Special: Random or Inverted Spectra Work Just as Well*, arXiv:2605.11181 | §1–2.4, App. H.3 | Exact spectral shape matters little; step-size optimality does |
 | Massena, Friedrich & Serrurier (2026), *From SGD to Muon: Adaptive Optimization via Schatten-p Norms*, arXiv:2605.19781 (NeurIPS 2026) | abstract | Picks a per-layer geometry between SGD and Muon from gradient and activation statistics |
 | Qi, Chen, Ye, He & Xiao (2026), *Delving into Muon and Beyond*, arXiv:2602.04669 | abstract | U S^p Vᵀ family (p = 0, 1/4, 1/2, 1); Muon not consistently better than Adam |
 | Fan, Liu, Hong, Kompella & Liu (2026), *Rethinking Muon Beyond Pretraining*, arXiv:2605.19282 | abstract | Muon amplifies noisy tail directions; collapses in low signal-to-noise RL post-training |
